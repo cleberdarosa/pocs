@@ -1,98 +1,86 @@
-import * as Device from 'expo-device';
-import { Platform, StyleSheet } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useRouter } from 'expo-router';
+import { useEffect } from 'react';
+import { StyleSheet, View } from 'react-native';
 
-import { AnimatedIcon } from '@/components/animated-icon';
-import { HintRow } from '@/components/hint-row';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { WebBadge } from '@/components/web-badge';
-import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
+import { AppLoading } from '@/components/AppLoading';
+import { AppLogo } from '@/components/AppLogo';
+import { Colors } from '@/core/theme/appTheme';
+import { DS } from '@/core/theme/designSystem';
+import { AppLogger } from '@/core/utils/appLogger';
+import type { SessionRestoreResult } from '@/models/auth';
+import { authRepository } from '@/repositories/authRepository';
+import { useAuthStore } from '@/stores/authStore';
 
-function getDevMenuHint() {
-  if (Platform.OS === 'web') {
-    return <ThemedText type="small">use browser devtools</ThemedText>;
-  }
-  if (Device.isDevice) {
-    return (
-      <ThemedText type="small">
-        shake device or press <ThemedText type="code">m</ThemedText> in terminal
-      </ThemedText>
-    );
-  }
-  const shortcut = Platform.OS === 'android' ? 'cmd+m (or ctrl+m)' : 'cmd+d';
+const MINIMUM_SPLASH_MS = 5000;
+
+const delay = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
+
+export default function SplashScreen() {
+  const router = useRouter();
+
+  useEffect(() => {
+    let mounted = true;
+
+    (async () => {
+      AppLogger.splash(`Splash iniciada. Tempo mínimo: ${MINIMUM_SPLASH_MS / 1000} segundos.`);
+      const minimumTime = delay(MINIMUM_SPLASH_MS);
+
+      let result: SessionRestoreResult;
+
+      try {
+        AppLogger.splash('Solicitando restauração da sessão.');
+        result = await authRepository.restoreSession();
+        AppLogger.splash(`Restauração concluída: ${result}.`);
+      } catch (error) {
+        AppLogger.error('SPLASH', 'Erro não tratado durante a restauração.', error);
+        await authRepository.logout();
+        result = 'unauthenticated';
+      }
+
+      useAuthStore.setState({
+        session: authRepository.currentSession,
+        isAuthenticated: result === 'authenticated',
+      });
+
+      AppLogger.splash('Aguardando o tempo mínimo da Splash.');
+      await minimumTime;
+
+      if (!mounted) {
+        AppLogger.splash('Splash não está mais montada. Navegação cancelada.');
+        return;
+      }
+
+      if (result === 'authenticated') {
+        AppLogger.splash('Sessão autenticada. Navegando para Home.');
+        router.replace('/home');
+      } else {
+        AppLogger.splash('Sessão não autenticada. Navegando para Login.');
+        router.replace('/login');
+      }
+    })();
+
+    return () => {
+      mounted = false;
+    };
+  }, [router]);
+
   return (
-    <ThemedText type="small">
-      press <ThemedText type="code">{shortcut}</ThemedText>
-    </ThemedText>
-  );
-}
-
-export default function HomeScreen() {
-  return (
-    <ThemedView style={styles.container}>
-      <SafeAreaView style={styles.safeArea}>
-        <ThemedView style={styles.heroSection}>
-          <AnimatedIcon />
-          <ThemedText type="title" style={styles.title}>
-            Welcome to&nbsp;Expo
-          </ThemedText>
-        </ThemedView>
-
-        <ThemedText type="code" style={styles.code}>
-          get started
-        </ThemedText>
-
-        <ThemedView type="backgroundElement" style={styles.stepContainer}>
-          <HintRow
-            title="Try editing"
-            hint={<ThemedText type="code">src/app/index.tsx</ThemedText>}
-          />
-          <HintRow title="Dev tools" hint={getDevMenuHint()} />
-          <HintRow
-            title="Fresh start"
-            hint={<ThemedText type="code">npm run reset-project</ThemedText>}
-          />
-        </ThemedView>
-
-        {Platform.OS === 'web' && <WebBadge />}
-      </SafeAreaView>
-    </ThemedView>
+    <View style={styles.container}>
+      <AppLogo width={DS.logoWidth} />
+      <View style={styles.spacer} />
+      <AppLoading />
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: 'center',
-    flexDirection: 'row',
-  },
-  safeArea: {
-    flex: 1,
-    paddingHorizontal: Spacing.four,
-    alignItems: 'center',
-    gap: Spacing.three,
-    paddingBottom: BottomTabInset + Spacing.three,
-    maxWidth: MaxContentWidth,
-  },
-  heroSection: {
+    backgroundColor: Colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
-    flex: 1,
-    paddingHorizontal: Spacing.four,
-    gap: Spacing.four,
   },
-  title: {
-    textAlign: 'center',
-  },
-  code: {
-    textTransform: 'uppercase',
-  },
-  stepContainer: {
-    gap: Spacing.three,
-    alignSelf: 'stretch',
-    paddingHorizontal: Spacing.three,
-    paddingVertical: Spacing.four,
-    borderRadius: Spacing.four,
+  spacer: {
+    height: DS.spaceXXl,
   },
 });
