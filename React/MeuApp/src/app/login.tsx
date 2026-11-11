@@ -16,6 +16,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { AppButton } from '@/components/AppButton';
 import { AppLogo } from '@/components/AppLogo';
+import { Icon } from '@/components/Icon';
 import { Snackbar } from '@/components/Snackbar';
 import { Colors } from '@/core/theme/appTheme';
 import { DS } from '@/core/theme/designSystem';
@@ -34,6 +35,7 @@ export default function LoginScreen() {
 
   const [cpf, setCpf] = useState(DEV_CPF);
   const [senha, setSenha] = useState(DEV_SENHA);
+  const [showSenha, setShowSenha] = useState(false);
   const [focused, setFocused] = useState<'cpf' | 'senha' | null>(null);
   const [snackbar, setSnackbar] = useState<string | null>(null);
   const hideSnackbar = useCallback(() => setSnackbar(null), []);
@@ -76,18 +78,33 @@ export default function LoginScreen() {
           />
 
           <Text style={[styles.label, styles.labelSpacing]}>Senha</Text>
-          <TextInput
-            value={senha}
-            onChangeText={setSenha}
-            secureTextEntry
-            autoComplete="password"
-            placeholder="Senha"
-            accessibilityLabel="Senha"
-            onFocus={() => setFocused('senha')}
-            onBlur={() => setFocused(null)}
-            onSubmitEditing={handleLogin}
-            style={[styles.input, focused === 'senha' && styles.inputFocused]}
-          />
+          <View>
+            <TextInput
+              value={senha}
+              onChangeText={setSenha}
+              secureTextEntry={!showSenha}
+              autoComplete="password"
+              placeholder="Senha"
+              accessibilityLabel="Senha"
+              onFocus={() => setFocused('senha')}
+              onBlur={() => setFocused(null)}
+              onSubmitEditing={handleLogin}
+              style={[styles.input, styles.inputWithIcon, focused === 'senha' && styles.inputFocused]}
+            />
+            {/* Mostra a senha apenas enquanto o ícone estiver pressionado. */}
+            <Pressable
+              onPressIn={() => setShowSenha(true)}
+              onPressOut={() => setShowSenha(false)}
+              hitSlop={8}
+              accessibilityRole="button"
+              accessibilityLabel="Segure para mostrar a senha"
+              style={styles.eye}>
+              <Icon
+                name={showSenha ? 'visibility' : 'visibility-off'}
+                color={Colors.textSecondary}
+              />
+            </Pressable>
+          </View>
 
           <View style={styles.forgot}>
             <AppButton variant="text" title="Esqueci minha senha" onPress={() => {}} />
@@ -165,6 +182,16 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: Colors.textPrimary,
     backgroundColor: 'transparent',
+  },
+  inputWithIcon: {
+    paddingRight: 48,
+  },
+  eye: {
+    position: 'absolute',
+    right: DS.spaceMd,
+    top: 0,
+    bottom: 0,
+    justifyContent: 'center',
   },
   inputFocused: {
     borderColor: Colors.primary,
