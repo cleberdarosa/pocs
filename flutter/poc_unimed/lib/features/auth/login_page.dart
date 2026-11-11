@@ -17,13 +17,14 @@ class LoginPage extends StatefulWidget {
 class _LoginPageState extends State<LoginPage> {
   final cpfController = TextEditingController();
   final senhaController = TextEditingController();
+  bool _showSenha = false;
 
   //TODO: REMOVER O MOCK
   @override
   void initState() {
     super.initState();
     cpfController.text = '00824521056';
-    senhaController.text = 'H3itor@2026';
+    senhaController.text = 'Cliente@2026';
   }
 
   @override
@@ -97,10 +98,26 @@ class _LoginPageState extends State<LoginPage> {
 
                   TextField(
                     controller: senhaController,
-                    obscureText: true,
-                    decoration: const InputDecoration(
+                    obscureText: !_showSenha,
+                    decoration: InputDecoration(
                       labelText: 'Senha',
-                      border: OutlineInputBorder(),
+                      border: const OutlineInputBorder(),
+                      // Mostra a senha apenas enquanto o ícone estiver pressionado.
+                      suffixIcon: Listener(
+                        onPointerDown: (_) => setState(() => _showSenha = true),
+                        onPointerUp: (_) => setState(() => _showSenha = false),
+                        onPointerCancel: (_) =>
+                            setState(() => _showSenha = false),
+                        child: Semantics(
+                          button: true,
+                          label: 'Segure para mostrar a senha',
+                          child: Icon(
+                            _showSenha
+                                ? Icons.visibility
+                                : Icons.visibility_off,
+                          ),
+                        ),
+                      ),
                     ),
                   ),
 
