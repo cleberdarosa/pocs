@@ -17,7 +17,7 @@
     --border: #e2ddd2;
   }
   @media (prefers-color-scheme: dark) {
-    :root {
+    :root:not([data-theme="light"]) {
       --bg: #16151a;
       --card: #211f26;
       --text: #f1efe9;
@@ -27,7 +27,20 @@
       --draw: #b8ad98;
       --gold: #f2c94c;
       --border: #34313b;
+      color-scheme: dark;
     }
+  }
+  :root[data-theme="dark"] {
+    --bg: #16151a;
+    --card: #211f26;
+    --text: #f1efe9;
+    --muted: #a39f97;
+    --p1: #6b9cff;
+    --p2: #ff7a70;
+    --draw: #b8ad98;
+    --gold: #f2c94c;
+    --border: #34313b;
+    color-scheme: dark;
   }
   * { box-sizing: border-box; }
   body {
@@ -530,8 +543,18 @@
 
   $('rematch').addEventListener('click', newChampionship);
   $('new-players').addEventListener('click', () => show('screen-setup'));
+  // Confirmação dentro da página: toca uma vez pra armar, de novo pra abandonar
+  let quitArmed = false, quitTimer;
+  function resetQuit() {
+    quitArmed = false;
+    clearTimeout(quitTimer);
+    $('quit').textContent = 'Abandonar';
+  }
   $('quit').addEventListener('click', () => {
-    if (confirm('Abandonar o campeonato? O placar vai ser perdido.')) show('screen-setup');
+    if (quitArmed) { resetQuit(); show('screen-setup'); return; }
+    quitArmed = true;
+    $('quit').textContent = 'Toque de novo pra abandonar';
+    quitTimer = setTimeout(resetQuit, 3000);
   });
 </script>
 </body>
