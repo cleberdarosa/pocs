@@ -42,6 +42,8 @@
   }
   main { width: 100%; max-width: 640px; }
   h1 { text-align: center; margin: 0 0 20px; font-size: 2rem; }
+  .back { display: inline-block; color: var(--muted); text-decoration: none; font-weight: 600; margin-bottom: 8px; }
+  .back:hover { color: var(--text); }
 
   .screen { display: none; }
   .screen.active { display: block; }
@@ -227,6 +229,7 @@
 </head>
 <body>
 <main>
+  <a class="back" href="../index.html">← Jogos</a>
   <h1>Jokenpô ✊✋✌️</h1>
 
   <!-- Tela 0: nomes -->
@@ -241,8 +244,8 @@
         <input id="name2" maxlength="20" placeholder="Jogador 2" autocomplete="off">
       </div>
       <p class="rules">
-        Campeonato de <strong>10 rodadas</strong>. Empate repete a rodada.<br>
-        Se terminar <strong>5 a 5</strong>, tem <strong>rodada de ouro</strong> 🏆
+        Campeonato de <strong>10 rodadas</strong>. Empate conta como rodada.<br>
+        Se terminar <strong>empatado</strong>, tem <strong>rodada de ouro</strong> 🏆
       </p>
       <button class="ok" id="start">Começar campeonato</button>
     </div>
@@ -473,30 +476,36 @@
 
       if (!winner) {
         state.draws++;
-        $('result').textContent = 'Empate! A rodada vai ser repetida.';
-        addHistory(label, a, b, 'Empate (repete)', 'draw');
-        setNext('Repetir rodada', startRound);
+        if (state.golden) {
+          $('result').textContent = 'Empate na rodada de ouro! Joguem de novo.';
+          addHistory(label, a, b, 'Empate (repete)', 'draw');
+        } else {
+          $('result').textContent = 'Empate!';
+          addHistory(label, a, b, 'Empate', 'draw');
+        }
       } else {
         state.wins[winner]++;
         $('p' + winner).classList.add('winner');
         const [w, l] = winner === 1 ? [a, b] : [b, a];
         $('result').textContent = `${names[winner]} venceu! ${w.name} ganha de ${l.name}`;
         addHistory(label, a, b, names[winner], state.golden ? 'gold' : '');
+      }
 
-        if (state.golden) {
-          setNext('Ver campeão 🏆', showChampion);
-        } else if (state.round >= TOTAL_ROUNDS) {
-          if (state.wins[1] === state.wins[2]) {
-            state.golden = true;
-            $('result').textContent += ` — Deu ${state.wins[1]} a ${state.wins[2]}! Vai ter rodada de ouro!`;
-            setNext('Ir pra rodada de ouro 🏆', startRound);
-          } else {
-            setNext('Ver campeão 🏆', showChampion);
-          }
+      if (state.golden) {
+        if (winner) setNext('Ver campeão 🏆', showChampion);
+        else setNext('Repetir rodada de ouro', startRound);
+      } else if (state.round >= TOTAL_ROUNDS) {
+        if (state.wins[1] === state.wins[2]) {
+          state.golden = true;
+          const prev = $('result').textContent;
+          $('result').textContent = `${prev}${prev.endsWith('!') ? '' : '.'} Deu ${state.wins[1]} a ${state.wins[2]}! Vai ter rodada de ouro!`;
+          setNext('Ir pra rodada de ouro 🏆', startRound);
         } else {
-          state.round++;
-          setNext('Próxima rodada', startRound);
+          setNext('Ver campeão 🏆', showChampion);
         }
+      } else {
+        state.round++;
+        setNext('Próxima rodada', startRound);
       }
       updateScore();
       $('play').hidden = true;
