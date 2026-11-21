@@ -99,6 +99,7 @@
     border: 2px solid var(--border);
     padding: 10px;
   }
+  .mode button small { display: block; font-weight: 500; color: var(--muted); font-size: 0.8rem; }
   .mode button[aria-pressed="true"] { border-color: var(--text); background: color-mix(in srgb, var(--text) 8%, transparent); }
   .field { margin-bottom: 16px; }
   .field label { display: block; font-weight: 700; margin-bottom: 6px; }
@@ -198,8 +199,8 @@
   <section class="screen active" id="screen-setup">
     <div class="card">
       <div class="mode" role="group" aria-label="Modo de jogo">
-        <button id="mode-2p" aria-pressed="true">👥 2 jogadores</button>
-        <button id="mode-cpu" aria-pressed="false">🤖 Contra o computador</button>
+        <button id="mode-cpu" aria-pressed="true">👤 Sozinho<small>contra o computador</small></button>
+        <button id="mode-2p" aria-pressed="false">👥 Em dupla<small>no mesmo aparelho</small></button>
       </div>
       <div class="field f1">
         <label for="name1">Jogador ❌</label>
@@ -256,6 +257,7 @@
   }
   $('mode-2p').addEventListener('click', () => setMode(false));
   $('mode-cpu').addEventListener('click', () => setMode(true));
+  setMode(true); // começa no modo sozinho
 
   // Monta as 9 casas
   for (let i = 0; i < 9; i++) {

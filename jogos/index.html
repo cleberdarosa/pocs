@@ -69,6 +69,7 @@
   .game .icon { font-size: 2.6rem; line-height: 1.1; }
   .game h2 { margin: 6px 0 0; font-size: 1.2rem; }
   .game p { margin: 0; color: var(--muted); font-size: 0.95rem; line-height: 1.4; }
+  .game .modes { margin-top: 4px; font-size: 0.8rem; font-weight: 600; color: var(--muted); }
   .game .tag { margin-top: auto; padding-top: 10px; font-size: 0.85rem; font-weight: 700; color: var(--accent); }
   .game.soon { border-style: dashed; opacity: 0.6; }
   .game.soon .tag { color: var(--muted); }
@@ -87,7 +88,7 @@
     {
       name: 'Jokenpô',
       icon: '✊✋✌️',
-      description: 'Campeonato de 10 rodadas pra 2 jogadores, com rodada de ouro no empate.',
+      description: 'Campeonato de 10 rodadas, com rodada de ouro se terminar empatado.',
       href: 'jokenpo/index.html',
     },
     {
@@ -121,7 +122,7 @@
     const card = document.createElement('a');
     card.className = 'game';
     card.href = game.href;
-    card.innerHTML = '<span class="icon"></span><h2></h2><p></p><span class="tag">Jogar →</span>';
+    card.innerHTML = '<span class="icon"></span><h2></h2><p></p><span class="modes">👤 Sozinho · 👥 Em dupla</span><span class="tag">Jogar →</span>';
     card.querySelector('.icon').textContent = game.icon;
     card.querySelector('h2').textContent = game.name;
     card.querySelector('p').textContent = game.description;

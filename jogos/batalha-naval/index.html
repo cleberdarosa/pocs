@@ -122,6 +122,7 @@
     border: 2px solid var(--border);
     padding: 10px;
   }
+  .seg button small { display: block; font-weight: 500; color: var(--muted); font-size: 0.8rem; }
   .seg button[aria-pressed="true"] { border-color: var(--text); background: color-mix(in srgb, var(--text) 8%, transparent); }
   .field { margin-bottom: 16px; }
   .field label { display: block; font-weight: 700; margin-bottom: 6px; }
@@ -260,8 +261,8 @@
     <div class="panel">
       <p class="group-label">Modo</p>
       <div class="seg" id="mode">
-        <button data-mode="cpu" aria-pressed="true">🤖 Contra o computador</button>
-        <button data-mode="2p" aria-pressed="false">👥 2 jogadores</button>
+        <button data-mode="cpu" aria-pressed="true">👤 Sozinho<small>contra o computador</small></button>
+        <button data-mode="2p" aria-pressed="false">👥 Em dupla<small>no mesmo aparelho</small></button>
       </div>
       <div class="field f1">
         <label for="name1">Jogador 1</label>

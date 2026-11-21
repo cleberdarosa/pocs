@@ -88,6 +88,22 @@
   .ok { min-width: 160px; font-size: 1.1rem; }
 
   /* Tela de nomes */
+  .mode {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-bottom: 18px;
+  }
+  .mode button {
+    border-radius: 12px;
+    background: transparent;
+    color: var(--text);
+    border: 2px solid var(--border);
+    padding: 10px;
+  }
+  .mode button small { display: block; font-weight: 500; color: var(--muted); font-size: 0.8rem; }
+  .mode button[aria-pressed="true"] { border-color: var(--text); background: color-mix(in srgb, var(--text) 8%, transparent); }
+  .field input:disabled { opacity: 0.6; }
   .field { text-align: left; margin-bottom: 16px; }
   .field label { display: block; font-weight: 700; margin-bottom: 6px; }
   .field.f1 label { color: var(--p1); }
@@ -248,13 +264,17 @@
   <!-- Tela 0: nomes -->
   <section class="screen active" id="screen-setup">
     <div class="card">
+      <div class="mode" id="mode" role="group" aria-label="Modo de jogo">
+        <button data-mode="solo" aria-pressed="true">👤 Sozinho<small>contra o computador</small></button>
+        <button data-mode="duo" aria-pressed="false">👥 Em dupla<small>no mesmo aparelho</small></button>
+      </div>
       <div class="field f1">
         <label for="name1">Nome do Jogador 1</label>
         <input id="name1" maxlength="20" placeholder="Jogador 1" autocomplete="off">
       </div>
       <div class="field f2">
         <label for="name2">Nome do Jogador 2</label>
-        <input id="name2" maxlength="20" placeholder="Jogador 2" autocomplete="off">
+        <input id="name2" maxlength="20" placeholder="Jogador 2" autocomplete="off" value="Computador 🤖" disabled>
       </div>
       <p class="rules">
         Campeonato de <strong>10 rodadas</strong>. Empate conta como rodada.<br>
@@ -337,7 +357,7 @@
       </div>
       <div class="controls">
         <button id="rematch">Revanche</button>
-        <button id="new-players" class="secondary">Novos jogadores</button>
+        <button id="new-players" class="secondary">Trocar modo</button>
       </div>
     </div>
     <section class="history">
@@ -388,7 +408,9 @@
     $$('[data-name="1"]').forEach(e => e.textContent = names[1]);
     $$('[data-name="2"]').forEach(e => e.textContent = names[2]);
     $('pick-title-1').textContent = `Vez de ${names[1]}`;
-    $('pick-hint-1').textContent = `Escolha sua jogada sem ${names[2]} ver 👀`;
+    $('pick-hint-1').textContent = vsCpu
+      ? 'Escolha sua jogada. O computador escolhe a dele em segredo 🤖'
+      : `Escolha sua jogada sem ${names[2]} ver 👀`;
     $('pick-title-2').textContent = `Vez de ${names[2]}`;
     $('pick-hint-2').textContent = `${names[1]} já escolheu. Agora é você!`;
   }
@@ -445,19 +467,37 @@
   }
 
   // Tela de nomes
+  let vsCpu = true;
+  $$('#mode button').forEach(btn => btn.addEventListener('click', () => {
+    $$('#mode button').forEach(b => b.setAttribute('aria-pressed', String(b === btn)));
+    vsCpu = btn.dataset.mode === 'solo';
+    $('name2').disabled = vsCpu;
+    $('name2').value = vsCpu ? 'Computador 🤖' : '';
+  }));
+
   $('start').addEventListener('click', () => {
-    names[1] = $('name1').value.trim() || 'Jogador 1';
-    names[2] = $('name2').value.trim() || 'Jogador 2';
+    names[1] = $('name1').value.trim() || (vsCpu ? 'Você' : 'Jogador 1');
+    names[2] = vsCpu ? 'Computador' : ($('name2').value.trim() || 'Jogador 2');
     if (names[1] === names[2]) { names[1] += ' (1)'; names[2] += ' (2)'; }
     applyNames();
     newChampionship();
   });
   ['name1', 'name2'].forEach(id => $(id).addEventListener('keydown', e => {
-    if (e.key === 'Enter') id === 'name1' ? $('name2').focus() : $('start').click();
+    if (e.key !== 'Enter') return;
+    if (id === 'name1' && !vsCpu) $('name2').focus(); else $('start').click();
   }));
 
-  $('ok1').addEventListener('click', () => show('screen-p2'));
-  $('ok2').addEventListener('click', () => {
+  $('ok1').addEventListener('click', () => {
+    if (vsCpu) {
+      selected[2] = RANDOM.name; // o computador sorteia a jogada dele
+      goToGame();
+    } else {
+      show('screen-p2');
+    }
+  });
+  $('ok2').addEventListener('click', goToGame);
+
+  function goToGame() {
     ['p1', 'p2'].forEach(p => $(p).classList.remove('winner'));
     $('h1').textContent = $('h2').textContent = '✊';
     $('c1').textContent = $('c2').textContent = '???';
@@ -466,7 +506,7 @@
     $('play').disabled = false;
     $('next').hidden = true;
     show('screen-game');
-  });
+  }
 
   let afterResult = null;
 

@@ -109,6 +109,7 @@
     border: 2px solid var(--border);
     padding: 10px;
   }
+  .seg button small { display: block; font-weight: 500; color: var(--muted); font-size: 0.8rem; }
   .seg button[aria-pressed="true"] { border-color: var(--text); background: color-mix(in srgb, var(--text) 8%, transparent); }
   .field { margin-bottom: 16px; }
   .field label { display: block; font-weight: 700; margin-bottom: 6px; }
@@ -250,8 +251,8 @@
     <div class="panel">
       <p class="group-label">Modo</p>
       <div class="seg" id="mode">
-        <button data-mode="1" aria-pressed="true">👤 Sozinho</button>
-        <button data-mode="2" aria-pressed="false">👥 2 jogadores</button>
+        <button data-mode="1" aria-pressed="true">👤 Sozinho<small>palavras sorteadas</small></button>
+        <button data-mode="2" aria-pressed="false">👥 Em dupla<small>um escolhe, outro adivinha</small></button>
       </div>
 
       <div id="solo-opts">
