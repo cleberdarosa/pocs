@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Jokenpô Automático</title>
+<title>Jokenpô</title>
 <style>
   :root {
     --bg: #f4f1ea;
@@ -39,20 +39,53 @@
     padding: 24px 16px;
   }
   main { width: 100%; max-width: 640px; }
-  h1 { text-align: center; margin: 0 0 4px; font-size: 2rem; }
-  .sub { text-align: center; color: var(--muted); margin: 0 0 24px; }
+  h1 { text-align: center; margin: 0 0 20px; font-size: 2rem; }
 
+  .screen { display: none; }
+  .screen.active { display: block; }
+
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 24px 16px;
+    text-align: center;
+  }
+
+  /* Telas de escolha */
+  .pick-title { margin: 0 0 4px; font-size: 1.5rem; }
+  #screen-p1 .pick-title { color: var(--p1); }
+  #screen-p2 .pick-title { color: var(--p2); }
+  .pick-hint { color: var(--muted); margin: 0 0 20px; }
+  .options {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+    margin-bottom: 20px;
+  }
+  .options button {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    padding: 14px 8px;
+    font-size: 0.95rem;
+    background: transparent;
+    color: var(--text);
+    border: 2px solid var(--border);
+    border-radius: 14px;
+  }
+  .options button .emoji { font-size: 2.6rem; line-height: 1.1; }
+  #screen-p1 .options button[aria-pressed="true"] { border-color: var(--p1); background: color-mix(in srgb, var(--p1) 15%, transparent); }
+  #screen-p2 .options button[aria-pressed="true"] { border-color: var(--p2); background: color-mix(in srgb, var(--p2) 15%, transparent); }
+
+  /* Tela do jogo */
   .arena {
     display: grid;
     grid-template-columns: 1fr auto 1fr;
     align-items: center;
     gap: 12px;
-    background: var(--card);
-    border: 1px solid var(--border);
-    border-radius: 16px;
-    padding: 24px 12px;
   }
-  .player { text-align: center; }
   .player h2 { margin: 0 0 8px; font-size: 1rem; }
   .p1 h2 { color: var(--p1); }
   .p2 h2 { color: var(--p2); }
@@ -65,26 +98,6 @@
   .p2 .hand { transform: scaleX(-1); }
   .choice { margin-top: 8px; color: var(--muted); min-height: 1.4em; font-weight: 600; }
   .vs { font-weight: 800; color: var(--muted); font-size: 1.2rem; }
-
-  .picker {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 6px;
-    margin-top: 14px;
-  }
-  .picker button {
-    padding: 6px 10px;
-    font-size: 1.3rem;
-    background: transparent;
-    color: var(--text);
-    border: 2px solid var(--border);
-    border-radius: 10px;
-    min-width: 44px;
-  }
-  .p1 .picker button[aria-pressed="true"] { border-color: var(--p1); background: color-mix(in srgb, var(--p1) 15%, transparent); }
-  .p2 .picker button[aria-pressed="true"] { border-color: var(--p2); background: color-mix(in srgb, var(--p2) 15%, transparent); }
-  .pick-label { font-size: 0.8rem; color: var(--muted); margin-top: 6px; min-height: 1.2em; }
 
   .shake .hand { animation: shake 0.3s ease-in-out 3; }
   .p2.shake .hand { animation-name: shake-mirror; }
@@ -142,7 +155,8 @@
     color: var(--text);
     border: 1px solid var(--border);
   }
-  button:disabled { opacity: 0.5; cursor: default; }
+  button:disabled { opacity: 0.4; cursor: default; }
+  .ok { min-width: 160px; font-size: 1.1rem; }
 
   .history { margin-top: 24px; }
   .history h3 { font-size: 0.95rem; color: var(--muted); margin: 0 0 8px; }
@@ -166,43 +180,61 @@
 <body>
 <main>
   <h1>Jokenpô ✊✋✌️</h1>
-  <p class="sub">Cada jogador escolhe sua jogada, ou deixa no 🎲 pra sortear.</p>
 
-  <section class="arena">
-    <div class="player p1" id="p1">
-      <h2>Jogador 1</h2>
-      <div class="hand" id="h1">✊</div>
-      <div class="choice" id="c1"></div>
-      <div class="picker" data-player="1"></div>
-      <div class="pick-label" id="l1"></div>
-    </div>
-    <div class="vs">VS</div>
-    <div class="player p2" id="p2">
-      <h2>Jogador 2</h2>
-      <div class="hand" id="h2">✊</div>
-      <div class="choice" id="c2"></div>
-      <div class="picker" data-player="2"></div>
-      <div class="pick-label" id="l2"></div>
+  <!-- Tela 1: Jogador 1 escolhe -->
+  <section class="screen active" id="screen-p1">
+    <div class="card">
+      <h2 class="pick-title">Vez do Jogador 1</h2>
+      <p class="pick-hint">Escolha sua jogada sem o Jogador 2 ver 👀</p>
+      <div class="options" data-player="1"></div>
+      <button class="ok" id="ok1" disabled>OK</button>
     </div>
   </section>
 
-  <div class="result" id="result">Aperte "Jogar" pra começar!</div>
+  <!-- Tela 2: Jogador 2 escolhe -->
+  <section class="screen" id="screen-p2">
+    <div class="card">
+      <h2 class="pick-title">Vez do Jogador 2</h2>
+      <p class="pick-hint">O Jogador 1 já escolheu. Agora é você!</p>
+      <div class="options" data-player="2"></div>
+      <button class="ok" id="ok2" disabled>OK</button>
+    </div>
+  </section>
 
-  <div class="score">
-    <div><span id="s1">0</span><small>Jogador 1</small></div>
-    <div><span id="sd">0</span><small>Empates</small></div>
-    <div><span id="s2">0</span><small>Jogador 2</small></div>
-  </div>
+  <!-- Tela 3: Jogo -->
+  <section class="screen" id="screen-game">
+    <div class="card arena">
+      <div class="player p1" id="p1">
+        <h2>Jogador 1</h2>
+        <div class="hand" id="h1">✊</div>
+        <div class="choice" id="c1">???</div>
+      </div>
+      <div class="vs">VS</div>
+      <div class="player p2" id="p2">
+        <h2>Jogador 2</h2>
+        <div class="hand" id="h2">✊</div>
+        <div class="choice" id="c2">???</div>
+      </div>
+    </div>
 
-  <div class="controls">
-    <button id="play">Jogar</button>
-    <button id="auto" class="secondary">Modo automático: OFF</button>
-    <button id="reset" class="secondary">Zerar</button>
-  </div>
+    <div class="result" id="result">Os dois já escolheram. Aperte "Jogar"!</div>
 
-  <section class="history">
-    <h3>Histórico</h3>
-    <ol id="log"></ol>
+    <div class="score">
+      <div><span id="s1">0</span><small>Jogador 1</small></div>
+      <div><span id="sd">0</span><small>Empates</small></div>
+      <div><span id="s2">0</span><small>Jogador 2</small></div>
+    </div>
+
+    <div class="controls">
+      <button id="play">Jogar</button>
+      <button id="again" hidden>Nova rodada</button>
+      <button id="reset" class="secondary">Zerar placar</button>
+    </div>
+
+    <section class="history">
+      <h3>Histórico</h3>
+      <ol id="log"></ol>
+    </section>
   </section>
 </main>
 
@@ -212,53 +244,61 @@
     { name: 'Papel',   emoji: '✋', beats: 'Pedra' },
     { name: 'Tesoura', emoji: '✌️', beats: 'Papel' },
   ];
+  const RANDOM = { name: 'Aleatório', emoji: '🎲' };
   const $ = id => document.getElementById(id);
   const score = { p1: 0, p2: 0, draw: 0 };
-  let round = 0, busy = false, autoTimer = null;
+  const selected = { 1: null, 2: null };
+  let round = 0;
 
-  // Escolha de cada jogador: nome da opção ou 'random'
-  const selected = { 1: 'random', 2: 'random' };
+  function show(id) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.toggle('active', s.id === id));
+    window.scrollTo(0, 0);
+  }
 
-  const pickRandom = () => OPTIONS[Math.floor(Math.random() * OPTIONS.length)];
-  const pick = player => selected[player] === 'random'
-    ? pickRandom()
-    : OPTIONS.find(o => o.name === selected[player]);
-
-  function buildPickers() {
-    document.querySelectorAll('.picker').forEach(el => {
-      const player = el.dataset.player;
-      const items = [...OPTIONS, { name: 'random', emoji: '🎲' }];
-      items.forEach(opt => {
-        const btn = document.createElement('button');
-        btn.textContent = opt.emoji;
-        btn.title = opt.name === 'random' ? 'Aleatório' : opt.name;
-        btn.setAttribute('aria-label', btn.title);
-        btn.setAttribute('aria-pressed', String(selected[player] === opt.name));
-        btn.addEventListener('click', () => {
-          selected[player] = opt.name;
-          el.querySelectorAll('button').forEach(b =>
-            b.setAttribute('aria-pressed', String(b === btn)));
-          updateLabel(player);
-        });
-        el.appendChild(btn);
+  // Monta os botões de escolha de cada jogador
+  document.querySelectorAll('.options').forEach(el => {
+    const player = el.dataset.player;
+    [...OPTIONS, RANDOM].forEach(opt => {
+      const btn = document.createElement('button');
+      btn.innerHTML = `<span class="emoji">${opt.emoji}</span><span>${opt.name}</span>`;
+      btn.setAttribute('aria-pressed', 'false');
+      btn.addEventListener('click', () => {
+        selected[player] = opt.name;
+        el.querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', String(b === btn)));
+        $('ok' + player).disabled = false;
       });
-      updateLabel(player);
+      el.appendChild(btn);
     });
+  });
+
+  function clearPicker(player) {
+    selected[player] = null;
+    document.querySelectorAll(`.options[data-player="${player}"] button`)
+      .forEach(b => b.setAttribute('aria-pressed', 'false'));
+    $('ok' + player).disabled = true;
   }
 
-  function updateLabel(player) {
-    $('l' + player).textContent = selected[player] === 'random'
-      ? 'Escolha: aleatório 🎲'
-      : `Escolha: ${selected[player]}`;
+  // Resolve a escolha final (sorteia se for aleatório)
+  function resolve(name) {
+    if (name === RANDOM.name) return OPTIONS[Math.floor(Math.random() * OPTIONS.length)];
+    return OPTIONS.find(o => o.name === name);
   }
 
-  function play() {
-    if (busy) return;
-    busy = true;
-    $('play').disabled = true;
+  $('ok1').addEventListener('click', () => show('screen-p2'));
+  $('ok2').addEventListener('click', () => {
+    // Prepara a tela do jogo sem revelar nada
     ['p1', 'p2'].forEach(p => $(p).classList.remove('winner'));
     $('h1').textContent = $('h2').textContent = '✊';
-    $('c1').textContent = $('c2').textContent = '';
+    $('c1').textContent = $('c2').textContent = '???';
+    $('result').textContent = 'Os dois já escolheram. Aperte "Jogar"!';
+    $('play').hidden = false;
+    $('play').disabled = false;
+    $('again').hidden = true;
+    show('screen-game');
+  });
+
+  $('play').addEventListener('click', () => {
+    $('play').disabled = true;
     $('result').textContent = 'Jo... ken... pô!';
     $('p1').classList.add('shake');
     $('p2').classList.add('shake');
@@ -266,7 +306,7 @@
     setTimeout(() => {
       $('p1').classList.remove('shake');
       $('p2').classList.remove('shake');
-      const a = pick(1), b = pick(2);
+      const a = resolve(selected[1]), b = resolve(selected[2]);
       $('h1').textContent = a.emoji; $('c1').textContent = a.name;
       $('h2').textContent = b.emoji; $('c2').textContent = b.name;
 
@@ -291,33 +331,22 @@
       li.lastChild.textContent = text.split('!')[0];
       $('log').prepend(li);
 
-      busy = false;
-      $('play').disabled = false;
+      $('play').hidden = true;
+      $('again').hidden = false;
     }, 900);
-  }
+  });
 
-  function toggleAuto() {
-    if (autoTimer) {
-      clearInterval(autoTimer); autoTimer = null;
-      $('auto').textContent = 'Modo automático: OFF';
-    } else {
-      play();
-      autoTimer = setInterval(play, 2000);
-      $('auto').textContent = 'Modo automático: ON';
-    }
-  }
+  $('again').addEventListener('click', () => {
+    clearPicker(1);
+    clearPicker(2);
+    show('screen-p1');
+  });
 
-  function reset() {
+  $('reset').addEventListener('click', () => {
     score.p1 = score.p2 = score.draw = 0; round = 0;
     $('s1').textContent = $('s2').textContent = $('sd').textContent = '0';
     $('log').innerHTML = '';
-    $('result').textContent = 'Placar zerado. Bora de novo!';
-  }
-
-  buildPickers();
-  $('play').addEventListener('click', play);
-  $('auto').addEventListener('click', toggleAuto);
-  $('reset').addEventListener('click', reset);
+  });
 </script>
 </body>
 </html>
