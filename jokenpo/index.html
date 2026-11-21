@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Jokenpô</title>
+<title>Campeonato de Jokenpô</title>
 <style>
   :root {
     --bg: #f4f1ea;
@@ -13,6 +13,7 @@
     --p1: #2f6fdb;
     --p2: #d9433b;
     --draw: #8a7f6c;
+    --gold: #c99a06;
     --border: #e2ddd2;
   }
   @media (prefers-color-scheme: dark) {
@@ -24,6 +25,7 @@
       --p1: #6b9cff;
       --p2: #ff7a70;
       --draw: #b8ad98;
+      --gold: #f2c94c;
       --border: #34313b;
     }
   }
@@ -52,11 +54,59 @@
     text-align: center;
   }
 
+  button {
+    font: inherit;
+    font-weight: 700;
+    border: none;
+    border-radius: 999px;
+    padding: 12px 22px;
+    cursor: pointer;
+    background: var(--text);
+    color: var(--bg);
+  }
+  button.secondary {
+    background: transparent;
+    color: var(--text);
+    border: 1px solid var(--border);
+  }
+  button:disabled { opacity: 0.4; cursor: default; }
+  .ok { min-width: 160px; font-size: 1.1rem; }
+
+  /* Tela de nomes */
+  .field { text-align: left; margin-bottom: 16px; }
+  .field label { display: block; font-weight: 700; margin-bottom: 6px; }
+  .field.f1 label { color: var(--p1); }
+  .field.f2 label { color: var(--p2); }
+  .field input {
+    width: 100%;
+    font: inherit;
+    font-size: 1.1rem;
+    padding: 12px 14px;
+    border-radius: 12px;
+    border: 2px solid var(--border);
+    background: var(--bg);
+    color: var(--text);
+  }
+  .field.f1 input:focus { outline: none; border-color: var(--p1); }
+  .field.f2 input:focus { outline: none; border-color: var(--p2); }
+  .rules { color: var(--muted); font-size: 0.95rem; margin: 4px 0 20px; line-height: 1.5; }
+
   /* Telas de escolha */
-  .pick-title { margin: 0 0 4px; font-size: 1.5rem; }
+  .round-tag {
+    display: inline-block;
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--muted);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    padding: 4px 12px;
+    margin-bottom: 12px;
+  }
+  .round-tag.gold { color: var(--gold); border-color: var(--gold); }
+  .pick-title { margin: 0 0 4px; font-size: 1.5rem; overflow-wrap: anywhere; }
   #screen-p1 .pick-title { color: var(--p1); }
   #screen-p2 .pick-title { color: var(--p2); }
-  .pick-hint { color: var(--muted); margin: 0 0 20px; }
+  .pick-hint { color: var(--muted); margin: 0 0 20px; overflow-wrap: anywhere; }
   .options {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
@@ -80,13 +130,16 @@
   #screen-p2 .options button[aria-pressed="true"] { border-color: var(--p2); background: color-mix(in srgb, var(--p2) 15%, transparent); }
 
   /* Tela do jogo */
+  .game-head { text-align: center; }
   .arena {
     display: grid;
     grid-template-columns: 1fr auto 1fr;
     align-items: center;
     gap: 12px;
   }
-  .player h2 { margin: 0 0 8px; font-size: 1rem; }
+  .arena.gold { border: 2px solid var(--gold); box-shadow: 0 0 24px color-mix(in srgb, var(--gold) 35%, transparent); }
+  .player { min-width: 0; }
+  .player h2 { margin: 0 0 8px; font-size: 1rem; overflow-wrap: anywhere; }
   .p1 h2 { color: var(--p1); }
   .p2 h2 { color: var(--p2); }
   .hand {
@@ -113,50 +166,36 @@
 
   .result {
     text-align: center;
-    font-size: 1.3rem;
+    font-size: 1.25rem;
     font-weight: 700;
     min-height: 1.6em;
     margin: 20px 0 8px;
+    overflow-wrap: anywhere;
   }
 
   .score {
     display: flex;
     justify-content: center;
-    gap: 12px;
+    gap: 10px;
     margin-bottom: 20px;
   }
   .score div {
+    flex: 1;
+    max-width: 150px;
+    min-width: 0;
     background: var(--card);
     border: 1px solid var(--border);
     border-radius: 12px;
-    padding: 8px 16px;
+    padding: 8px 10px;
     text-align: center;
-    min-width: 88px;
   }
   .score span { display: block; font-size: 1.6rem; font-weight: 800; }
-  .score small { color: var(--muted); }
-  #s1 { color: var(--p1); }
-  #s2 { color: var(--p2); }
-  #sd { color: var(--draw); }
+  .score small { color: var(--muted); display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .s1 { color: var(--p1); }
+  .s2 { color: var(--p2); }
+  .sd { color: var(--draw); }
 
   .controls { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; }
-  button {
-    font: inherit;
-    font-weight: 700;
-    border: none;
-    border-radius: 999px;
-    padding: 12px 22px;
-    cursor: pointer;
-    background: var(--text);
-    color: var(--bg);
-  }
-  button.secondary {
-    background: transparent;
-    color: var(--text);
-    border: 1px solid var(--border);
-  }
-  button:disabled { opacity: 0.4; cursor: default; }
-  .ok { min-width: 160px; font-size: 1.1rem; }
 
   .history { margin-top: 24px; }
   .history h3 { font-size: 0.95rem; color: var(--muted); margin: 0 0 8px; }
@@ -164,7 +203,7 @@
     list-style: none;
     padding: 0;
     margin: 0;
-    max-height: 220px;
+    max-height: 260px;
     overflow-y: auto;
   }
   .history li {
@@ -175,17 +214,46 @@
     border-bottom: 1px solid var(--border);
     font-size: 0.95rem;
   }
+  .history li span:last-child { text-align: right; overflow-wrap: anywhere; }
+  .history li.draw { color: var(--muted); }
+  .history li.gold { color: var(--gold); font-weight: 700; }
+
+  /* Tela do campeão */
+  .trophy { font-size: 5rem; line-height: 1; margin-bottom: 8px; }
+  .champ-label { color: var(--muted); margin: 0; font-weight: 600; }
+  .champ-name { font-size: 2rem; margin: 4px 0 8px; color: var(--gold); overflow-wrap: anywhere; }
+  .champ-detail { color: var(--muted); margin: 0 0 20px; }
 </style>
 </head>
 <body>
 <main>
   <h1>Jokenpô ✊✋✌️</h1>
 
-  <!-- Tela 1: Jogador 1 escolhe -->
-  <section class="screen active" id="screen-p1">
+  <!-- Tela 0: nomes -->
+  <section class="screen active" id="screen-setup">
     <div class="card">
-      <h2 class="pick-title">Vez do Jogador 1</h2>
-      <p class="pick-hint">Escolha sua jogada sem o Jogador 2 ver 👀</p>
+      <div class="field f1">
+        <label for="name1">Nome do Jogador 1</label>
+        <input id="name1" maxlength="20" placeholder="Jogador 1" autocomplete="off">
+      </div>
+      <div class="field f2">
+        <label for="name2">Nome do Jogador 2</label>
+        <input id="name2" maxlength="20" placeholder="Jogador 2" autocomplete="off">
+      </div>
+      <p class="rules">
+        Campeonato de <strong>10 rodadas</strong>. Empate repete a rodada.<br>
+        Se terminar <strong>5 a 5</strong>, tem <strong>rodada de ouro</strong> 🏆
+      </p>
+      <button class="ok" id="start">Começar campeonato</button>
+    </div>
+  </section>
+
+  <!-- Tela 1: Jogador 1 escolhe -->
+  <section class="screen" id="screen-p1">
+    <div class="card">
+      <span class="round-tag" data-round-tag></span>
+      <h2 class="pick-title" id="pick-title-1"></h2>
+      <p class="pick-hint" id="pick-hint-1"></p>
       <div class="options" data-player="1"></div>
       <button class="ok" id="ok1" disabled>OK</button>
     </div>
@@ -194,8 +262,9 @@
   <!-- Tela 2: Jogador 2 escolhe -->
   <section class="screen" id="screen-p2">
     <div class="card">
-      <h2 class="pick-title">Vez do Jogador 2</h2>
-      <p class="pick-hint">O Jogador 1 já escolheu. Agora é você!</p>
+      <span class="round-tag" data-round-tag></span>
+      <h2 class="pick-title" id="pick-title-2"></h2>
+      <p class="pick-hint" id="pick-hint-2"></p>
       <div class="options" data-player="2"></div>
       <button class="ok" id="ok2" disabled>OK</button>
     </div>
@@ -203,42 +272,67 @@
 
   <!-- Tela 3: Jogo -->
   <section class="screen" id="screen-game">
-    <div class="card arena">
+    <div class="game-head"><span class="round-tag" data-round-tag></span></div>
+    <div class="card arena" id="arena">
       <div class="player p1" id="p1">
-        <h2>Jogador 1</h2>
+        <h2 data-name="1"></h2>
         <div class="hand" id="h1">✊</div>
         <div class="choice" id="c1">???</div>
       </div>
       <div class="vs">VS</div>
       <div class="player p2" id="p2">
-        <h2>Jogador 2</h2>
+        <h2 data-name="2"></h2>
         <div class="hand" id="h2">✊</div>
         <div class="choice" id="c2">???</div>
       </div>
     </div>
 
-    <div class="result" id="result">Os dois já escolheram. Aperte "Jogar"!</div>
+    <div class="result" id="result"></div>
 
     <div class="score">
-      <div><span id="s1">0</span><small>Jogador 1</small></div>
-      <div><span id="sd">0</span><small>Empates</small></div>
-      <div><span id="s2">0</span><small>Jogador 2</small></div>
+      <div><span class="s1" data-score="1">0</span><small data-name="1"></small></div>
+      <div><span class="sd" data-score="draw">0</span><small>Empates</small></div>
+      <div><span class="s2" data-score="2">0</span><small data-name="2"></small></div>
     </div>
 
     <div class="controls">
       <button id="play">Jogar</button>
-      <button id="again" hidden>Nova rodada</button>
-      <button id="reset" class="secondary">Zerar placar</button>
+      <button id="next" hidden></button>
+      <button id="quit" class="secondary">Abandonar</button>
     </div>
 
     <section class="history">
       <h3>Histórico</h3>
-      <ol id="log"></ol>
+      <ol data-log></ol>
+    </section>
+  </section>
+
+  <!-- Tela 4: Campeão -->
+  <section class="screen" id="screen-champ">
+    <div class="card">
+      <div class="trophy">🏆</div>
+      <p class="champ-label">Campeão</p>
+      <h2 class="champ-name" id="champ-name"></h2>
+      <p class="champ-detail" id="champ-detail"></p>
+      <div class="score">
+        <div><span class="s1" data-score="1">0</span><small data-name="1"></small></div>
+        <div><span class="sd" data-score="draw">0</span><small>Empates</small></div>
+        <div><span class="s2" data-score="2">0</span><small data-name="2"></small></div>
+      </div>
+      <div class="controls">
+        <button id="rematch">Revanche</button>
+        <button id="new-players" class="secondary">Novos jogadores</button>
+      </div>
+    </div>
+    <section class="history">
+      <h3>Histórico</h3>
+      <ol data-log></ol>
     </section>
   </section>
 </main>
 
 <script>
+  const TOTAL_ROUNDS = 10;
   const OPTIONS = [
     { name: 'Pedra',   emoji: '✊', beats: 'Tesoura' },
     { name: 'Papel',   emoji: '✋', beats: 'Pedra' },
@@ -246,17 +340,56 @@
   ];
   const RANDOM = { name: 'Aleatório', emoji: '🎲' };
   const $ = id => document.getElementById(id);
-  const score = { p1: 0, p2: 0, draw: 0 };
+  const $$ = sel => document.querySelectorAll(sel);
+
+  const names = { 1: 'Jogador 1', 2: 'Jogador 2' };
   const selected = { 1: null, 2: null };
-  let round = 0;
+  let state;
+
+  function newChampionship() {
+    state = { wins: { 1: 0, 2: 0 }, draws: 0, round: 1, golden: false, history: [] };
+    $$('[data-log]').forEach(ol => ol.innerHTML = '');
+    updateScore();
+    startRound();
+  }
 
   function show(id) {
-    document.querySelectorAll('.screen').forEach(s => s.classList.toggle('active', s.id === id));
+    $$('.screen').forEach(s => s.classList.toggle('active', s.id === id));
     window.scrollTo(0, 0);
   }
 
-  // Monta os botões de escolha de cada jogador
-  document.querySelectorAll('.options').forEach(el => {
+  function roundLabel() {
+    return state.golden ? '🏆 Rodada de ouro' : `Rodada ${state.round} de ${TOTAL_ROUNDS}`;
+  }
+
+  function updateScore() {
+    $$('[data-score="1"]').forEach(e => e.textContent = state.wins[1]);
+    $$('[data-score="2"]').forEach(e => e.textContent = state.wins[2]);
+    $$('[data-score="draw"]').forEach(e => e.textContent = state.draws);
+  }
+
+  function applyNames() {
+    $$('[data-name="1"]').forEach(e => e.textContent = names[1]);
+    $$('[data-name="2"]').forEach(e => e.textContent = names[2]);
+    $('pick-title-1').textContent = `Vez de ${names[1]}`;
+    $('pick-hint-1').textContent = `Escolha sua jogada sem ${names[2]} ver 👀`;
+    $('pick-title-2').textContent = `Vez de ${names[2]}`;
+    $('pick-hint-2').textContent = `${names[1]} já escolheu. Agora é você!`;
+  }
+
+  function startRound() {
+    clearPicker(1);
+    clearPicker(2);
+    $$('[data-round-tag]').forEach(t => {
+      t.textContent = roundLabel();
+      t.classList.toggle('gold', state.golden);
+    });
+    $('arena').classList.toggle('gold', state.golden);
+    show('screen-p1');
+  }
+
+  // Botões de escolha de cada jogador
+  $$('.options').forEach(el => {
     const player = el.dataset.player;
     [...OPTIONS, RANDOM].forEach(opt => {
       const btn = document.createElement('button');
@@ -273,29 +406,53 @@
 
   function clearPicker(player) {
     selected[player] = null;
-    document.querySelectorAll(`.options[data-player="${player}"] button`)
-      .forEach(b => b.setAttribute('aria-pressed', 'false'));
+    $$(`.options[data-player="${player}"] button`).forEach(b => b.setAttribute('aria-pressed', 'false'));
     $('ok' + player).disabled = true;
   }
 
-  // Resolve a escolha final (sorteia se for aleatório)
   function resolve(name) {
     if (name === RANDOM.name) return OPTIONS[Math.floor(Math.random() * OPTIONS.length)];
     return OPTIONS.find(o => o.name === name);
   }
 
+  function addHistory(label, a, b, text, cls) {
+    $$('[data-log]').forEach(ol => {
+      const li = document.createElement('li');
+      if (cls) li.className = cls;
+      const left = document.createElement('span');
+      const right = document.createElement('span');
+      left.textContent = `${label} ${a.emoji} × ${b.emoji}`;
+      right.textContent = text;
+      li.append(left, right);
+      ol.prepend(li);
+    });
+  }
+
+  // Tela de nomes
+  $('start').addEventListener('click', () => {
+    names[1] = $('name1').value.trim() || 'Jogador 1';
+    names[2] = $('name2').value.trim() || 'Jogador 2';
+    if (names[1] === names[2]) { names[1] += ' (1)'; names[2] += ' (2)'; }
+    applyNames();
+    newChampionship();
+  });
+  ['name1', 'name2'].forEach(id => $(id).addEventListener('keydown', e => {
+    if (e.key === 'Enter') id === 'name1' ? $('name2').focus() : $('start').click();
+  }));
+
   $('ok1').addEventListener('click', () => show('screen-p2'));
   $('ok2').addEventListener('click', () => {
-    // Prepara a tela do jogo sem revelar nada
     ['p1', 'p2'].forEach(p => $(p).classList.remove('winner'));
     $('h1').textContent = $('h2').textContent = '✊';
     $('c1').textContent = $('c2').textContent = '???';
     $('result').textContent = 'Os dois já escolheram. Aperte "Jogar"!';
     $('play').hidden = false;
     $('play').disabled = false;
-    $('again').hidden = true;
+    $('next').hidden = true;
     show('screen-game');
   });
+
+  let afterResult = null;
 
   $('play').addEventListener('click', () => {
     $('play').disabled = true;
@@ -310,42 +467,62 @@
       $('h1').textContent = a.emoji; $('c1').textContent = a.name;
       $('h2').textContent = b.emoji; $('c2').textContent = b.name;
 
-      let text;
-      if (a.name === b.name) {
-        score.draw++; text = 'Empate!';
-      } else if (a.beats === b.name) {
-        score.p1++; text = `Jogador 1 venceu! ${a.name} ganha de ${b.name}`;
-        $('p1').classList.add('winner');
+      const label = state.golden ? '🏆' : `#${state.round}`;
+      let winner = 0;
+      if (a.name !== b.name) winner = a.beats === b.name ? 1 : 2;
+
+      if (!winner) {
+        state.draws++;
+        $('result').textContent = 'Empate! A rodada vai ser repetida.';
+        addHistory(label, a, b, 'Empate (repete)', 'draw');
+        setNext('Repetir rodada', startRound);
       } else {
-        score.p2++; text = `Jogador 2 venceu! ${b.name} ganha de ${a.name}`;
-        $('p2').classList.add('winner');
+        state.wins[winner]++;
+        $('p' + winner).classList.add('winner');
+        const [w, l] = winner === 1 ? [a, b] : [b, a];
+        $('result').textContent = `${names[winner]} venceu! ${w.name} ganha de ${l.name}`;
+        addHistory(label, a, b, names[winner], state.golden ? 'gold' : '');
+
+        if (state.golden) {
+          setNext('Ver campeão 🏆', showChampion);
+        } else if (state.round >= TOTAL_ROUNDS) {
+          if (state.wins[1] === state.wins[2]) {
+            state.golden = true;
+            $('result').textContent += ` — Deu ${state.wins[1]} a ${state.wins[2]}! Vai ter rodada de ouro!`;
+            setNext('Ir pra rodada de ouro 🏆', startRound);
+          } else {
+            setNext('Ver campeão 🏆', showChampion);
+          }
+        } else {
+          state.round++;
+          setNext('Próxima rodada', startRound);
+        }
       }
-      $('result').textContent = text;
-      $('s1').textContent = score.p1;
-      $('s2').textContent = score.p2;
-      $('sd').textContent = score.draw;
-
-      round++;
-      const li = document.createElement('li');
-      li.innerHTML = `<span>#${round} ${a.emoji} × ${b.emoji}</span><span></span>`;
-      li.lastChild.textContent = text.split('!')[0];
-      $('log').prepend(li);
-
+      updateScore();
       $('play').hidden = true;
-      $('again').hidden = false;
     }, 900);
   });
 
-  $('again').addEventListener('click', () => {
-    clearPicker(1);
-    clearPicker(2);
-    show('screen-p1');
-  });
+  function setNext(text, fn) {
+    $('next').textContent = text;
+    $('next').hidden = false;
+    afterResult = fn;
+  }
+  $('next').addEventListener('click', () => afterResult && afterResult());
 
-  $('reset').addEventListener('click', () => {
-    score.p1 = score.p2 = score.draw = 0; round = 0;
-    $('s1').textContent = $('s2').textContent = $('sd').textContent = '0';
-    $('log').innerHTML = '';
+  function showChampion() {
+    const champ = state.wins[1] > state.wins[2] ? 1 : 2;
+    $('champ-name').textContent = names[champ];
+    $('champ-detail').textContent = state.golden
+      ? 'Venceu na rodada de ouro!'
+      : `Venceu por ${Math.max(state.wins[1], state.wins[2])} a ${Math.min(state.wins[1], state.wins[2])}`;
+    show('screen-champ');
+  }
+
+  $('rematch').addEventListener('click', newChampionship);
+  $('new-players').addEventListener('click', () => show('screen-setup'));
+  $('quit').addEventListener('click', () => {
+    if (confirm('Abandonar o campeonato? O placar vai ser perdido.')) show('screen-setup');
   });
 </script>
 </body>
