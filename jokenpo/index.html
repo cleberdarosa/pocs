@@ -66,6 +66,26 @@
   .choice { margin-top: 8px; color: var(--muted); min-height: 1.4em; font-weight: 600; }
   .vs { font-weight: 800; color: var(--muted); font-size: 1.2rem; }
 
+  .picker {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 6px;
+    margin-top: 14px;
+  }
+  .picker button {
+    padding: 6px 10px;
+    font-size: 1.3rem;
+    background: transparent;
+    color: var(--text);
+    border: 2px solid var(--border);
+    border-radius: 10px;
+    min-width: 44px;
+  }
+  .p1 .picker button[aria-pressed="true"] { border-color: var(--p1); background: color-mix(in srgb, var(--p1) 15%, transparent); }
+  .p2 .picker button[aria-pressed="true"] { border-color: var(--p2); background: color-mix(in srgb, var(--p2) 15%, transparent); }
+  .pick-label { font-size: 0.8rem; color: var(--muted); margin-top: 6px; min-height: 1.2em; }
+
   .shake .hand { animation: shake 0.3s ease-in-out 3; }
   .p2.shake .hand { animation-name: shake-mirror; }
   @keyframes shake {
@@ -146,19 +166,23 @@
 <body>
 <main>
   <h1>Jokenpô ✊✋✌️</h1>
-  <p class="sub">Os dois jogadores escolhem sozinhos, no aleatório.</p>
+  <p class="sub">Cada jogador escolhe sua jogada, ou deixa no 🎲 pra sortear.</p>
 
   <section class="arena">
     <div class="player p1" id="p1">
       <h2>Jogador 1</h2>
       <div class="hand" id="h1">✊</div>
       <div class="choice" id="c1"></div>
+      <div class="picker" data-player="1"></div>
+      <div class="pick-label" id="l1"></div>
     </div>
     <div class="vs">VS</div>
     <div class="player p2" id="p2">
       <h2>Jogador 2</h2>
       <div class="hand" id="h2">✊</div>
       <div class="choice" id="c2"></div>
+      <div class="picker" data-player="2"></div>
+      <div class="pick-label" id="l2"></div>
     </div>
   </section>
 
@@ -192,7 +216,41 @@
   const score = { p1: 0, p2: 0, draw: 0 };
   let round = 0, busy = false, autoTimer = null;
 
-  const pick = () => OPTIONS[Math.floor(Math.random() * OPTIONS.length)];
+  // Escolha de cada jogador: nome da opção ou 'random'
+  const selected = { 1: 'random', 2: 'random' };
+
+  const pickRandom = () => OPTIONS[Math.floor(Math.random() * OPTIONS.length)];
+  const pick = player => selected[player] === 'random'
+    ? pickRandom()
+    : OPTIONS.find(o => o.name === selected[player]);
+
+  function buildPickers() {
+    document.querySelectorAll('.picker').forEach(el => {
+      const player = el.dataset.player;
+      const items = [...OPTIONS, { name: 'random', emoji: '🎲' }];
+      items.forEach(opt => {
+        const btn = document.createElement('button');
+        btn.textContent = opt.emoji;
+        btn.title = opt.name === 'random' ? 'Aleatório' : opt.name;
+        btn.setAttribute('aria-label', btn.title);
+        btn.setAttribute('aria-pressed', String(selected[player] === opt.name));
+        btn.addEventListener('click', () => {
+          selected[player] = opt.name;
+          el.querySelectorAll('button').forEach(b =>
+            b.setAttribute('aria-pressed', String(b === btn)));
+          updateLabel(player);
+        });
+        el.appendChild(btn);
+      });
+      updateLabel(player);
+    });
+  }
+
+  function updateLabel(player) {
+    $('l' + player).textContent = selected[player] === 'random'
+      ? 'Escolha: aleatório 🎲'
+      : `Escolha: ${selected[player]}`;
+  }
 
   function play() {
     if (busy) return;
@@ -208,7 +266,7 @@
     setTimeout(() => {
       $('p1').classList.remove('shake');
       $('p2').classList.remove('shake');
-      const a = pick(), b = pick();
+      const a = pick(1), b = pick(2);
       $('h1').textContent = a.emoji; $('c1').textContent = a.name;
       $('h2').textContent = b.emoji; $('c2').textContent = b.name;
 
@@ -256,6 +314,7 @@
     $('result').textContent = 'Placar zerado. Bora de novo!';
   }
 
+  buildPickers();
   $('play').addEventListener('click', play);
   $('auto').addEventListener('click', toggleAuto);
   $('reset').addEventListener('click', reset);
