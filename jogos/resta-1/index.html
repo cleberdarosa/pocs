@@ -1,0 +1,542 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Resta 1</title>
+<style>
+  :root {
+    --bg: #f4f1ea;
+    --card: #ffffff;
+    --text: #1f1d1a;
+    --muted: #6b665e;
+    --p1: #2f6fdb;
+    --p2: #d9433b;
+    --gold: #c99a06;
+    --ok: #2e9a5b;
+    --wood: #c89b6a;
+    --wood-edge: #9a6b45;
+    --hole: #8a5e3b;
+    --peg: #2f6fdb;
+    --peg-hi: #8fb4f5;
+    --border: #e2ddd2;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #16151a;
+      --card: #211f26;
+      --text: #f1efe9;
+      --muted: #a39f97;
+      --p1: #6b9cff;
+      --p2: #ff7a70;
+      --gold: #f2c94c;
+      --ok: #5fd08e;
+      --wood: #8f6a46;
+      --wood-edge: #6e4a2f;
+      --hole: #4a3220;
+      --peg: #6b9cff;
+      --peg-hi: #c3d6ff;
+      --border: #34313b;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #16151a;
+    --card: #211f26;
+    --text: #f1efe9;
+    --muted: #a39f97;
+    --p1: #6b9cff;
+    --p2: #ff7a70;
+    --gold: #f2c94c;
+    --ok: #5fd08e;
+    --wood: #8f6a46;
+    --wood-edge: #6e4a2f;
+    --hole: #4a3220;
+    --peg: #6b9cff;
+    --peg-hi: #c3d6ff;
+    --border: #34313b;
+    color-scheme: dark;
+  }
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    display: flex;
+    justify-content: center;
+    padding: 24px 16px;
+  }
+  main { width: 100%; max-width: 520px; }
+  .back-link { display: inline-block; color: var(--muted); text-decoration: none; font-weight: 600; margin-bottom: 8px; }
+  .back-link:hover { color: var(--text); }
+  h1 { text-align: center; margin: 0 0 20px; font-size: 2rem; }
+
+  .screen { display: none; }
+  .screen.active { display: block; }
+
+  .panel {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 24px 16px;
+  }
+
+  button {
+    font: inherit;
+    font-weight: 700;
+    border: none;
+    border-radius: 999px;
+    padding: 12px 22px;
+    cursor: pointer;
+    background: var(--text);
+    color: var(--bg);
+  }
+  button.secondary {
+    background: transparent;
+    color: var(--text);
+    border: 1px solid var(--border);
+  }
+  button:disabled { opacity: 0.4; cursor: default; }
+  button:focus-visible { outline: 3px solid var(--p1); outline-offset: 2px; }
+  .controls { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; }
+
+  /* Configuração */
+  .group-label { font-weight: 700; margin: 0 0 8px; }
+  .seg {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-bottom: 18px;
+  }
+  .seg button {
+    border-radius: 12px;
+    background: transparent;
+    color: var(--text);
+    border: 2px solid var(--border);
+    padding: 10px;
+  }
+  .seg button small { display: block; font-weight: 500; color: var(--muted); font-size: 0.8rem; }
+  .seg button[aria-pressed="true"] { border-color: var(--text); background: color-mix(in srgb, var(--text) 8%, transparent); }
+  .field { margin-bottom: 16px; }
+  .field label { display: block; font-weight: 700; margin-bottom: 6px; }
+  .field.f1 label { color: var(--p1); }
+  .field.f2 label { color: var(--p2); }
+  .field input {
+    width: 100%;
+    font: inherit;
+    font-size: 1.1rem;
+    padding: 12px 14px;
+    border-radius: 12px;
+    border: 2px solid var(--border);
+    background: var(--bg);
+    color: var(--text);
+  }
+  .field.f1 input:focus { outline: none; border-color: var(--p1); }
+  .field.f2 input:focus { outline: none; border-color: var(--p2); }
+  .rules { color: var(--muted); font-size: 0.95rem; line-height: 1.5; margin: 0 0 18px; }
+
+  /* Placar */
+  .score {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-bottom: 12px;
+  }
+  .score div {
+    flex: 1;
+    max-width: 150px;
+    min-width: 0;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 8px 10px;
+    text-align: center;
+  }
+  .score span { display: block; font-size: 1.5rem; font-weight: 800; font-variant-numeric: tabular-nums; }
+  .score small { color: var(--muted); display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .cpeg { color: var(--peg); }
+  .cgold { color: var(--gold); }
+
+  .who { text-align: center; font-weight: 700; margin: 0 0 6px; font-size: 1.1rem; overflow-wrap: anywhere; }
+  .who.t1 { color: var(--p1); }
+  .who.t2 { color: var(--p2); }
+  .status {
+    text-align: center;
+    font-size: 1.05rem;
+    font-weight: 700;
+    min-height: 1.6em;
+    margin: 0 0 12px;
+    overflow-wrap: anywhere;
+  }
+  .status.end { font-size: 1.3rem; color: var(--gold); }
+
+  /* Tabuleiro em cruz */
+  .board {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    grid-template-rows: repeat(7, 1fr);
+    gap: 4px;
+    width: min(100%, 420px);
+    aspect-ratio: 1;
+    margin: 0 auto 16px;
+    padding: 10px;
+    background: var(--wood);
+    border: 4px solid var(--wood-edge);
+    border-radius: 28px;
+  }
+  .hole {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    border: none;
+    border-radius: 50%;
+    background: transparent;
+    min-width: 0;
+    position: relative;
+  }
+  .hole::before {
+    content: "";
+    position: absolute;
+    width: 46%;
+    height: 46%;
+    border-radius: 50%;
+    background: var(--hole);
+    box-shadow: inset 0 2px 3px rgba(0, 0, 0, 0.35);
+  }
+  .hole.off { visibility: hidden; }
+  .hole .peg {
+    position: relative;
+    width: 76%;
+    height: 76%;
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 30%, var(--peg-hi), var(--peg) 60%);
+    box-shadow: 0 2px 3px rgba(0, 0, 0, 0.3);
+    transition: transform 0.15s;
+  }
+  .hole.can { cursor: pointer; }
+  .hole.can .peg { box-shadow: 0 0 0 3px color-mix(in srgb, var(--ok) 70%, transparent), 0 2px 3px rgba(0, 0, 0, 0.3); }
+  .hole.sel .peg { transform: scale(1.12); box-shadow: 0 0 0 4px var(--gold), 0 2px 3px rgba(0, 0, 0, 0.3); }
+  .hole.target { cursor: pointer; }
+  .hole.target::before { background: var(--ok); width: 52%; height: 52%; }
+  .hole.gone::after {
+    content: "";
+    position: absolute;
+    width: 30%;
+    height: 30%;
+    border-radius: 50%;
+    border: 2px solid var(--gold);
+    animation: fade 0.6s forwards;
+  }
+  @keyframes fade { from { opacity: 1; transform: scale(1.6); } to { opacity: 0; transform: scale(0.6); } }
+  @media (prefers-reduced-motion: reduce) { .hole .peg { transition: none; } .hole.gone::after { animation: none; opacity: 0; } }
+
+  /* Passe o aparelho / resultado */
+  .center { text-align: center; }
+  .big { font-size: 4rem; line-height: 1; margin-bottom: 10px; }
+  .center h2 { margin: 0 0 6px; font-size: 1.6rem; overflow-wrap: anywhere; }
+  .center p { color: var(--muted); margin: 0 0 18px; overflow-wrap: anywhere; }
+</style>
+</head>
+<body>
+<main>
+  <a class="back-link" href="../index.html">← Jogos</a>
+  <h1>Resta 1 🔵</h1>
+
+  <!-- Configuração -->
+  <section class="screen active" id="screen-setup">
+    <div class="panel">
+      <p class="group-label">Modo</p>
+      <div class="seg" id="mode">
+        <button data-mode="solo" aria-pressed="true">👤 Sozinho<small>bata seu recorde</small></button>
+        <button data-mode="duo" aria-pressed="false">👥 Em dupla<small>cada um no seu tabuleiro</small></button>
+      </div>
+      <div id="duo-fields" hidden>
+        <div class="field f1">
+          <label for="name1">Jogador 1</label>
+          <input id="name1" maxlength="20" placeholder="Jogador 1" autocomplete="off">
+        </div>
+        <div class="field f2">
+          <label for="name2">Jogador 2</label>
+          <input id="name2" maxlength="20" placeholder="Jogador 2" autocomplete="off">
+        </div>
+      </div>
+      <p class="rules" id="rules-solo">
+        Pule uma peça por cima de outra, na horizontal ou vertical, até um buraco vazio.
+        A peça pulada sai do tabuleiro. O objetivo é deixar só uma peça.
+      </p>
+      <p class="rules" id="rules-duo" hidden>
+        Cada um joga uma partida inteira no seu tabuleiro, um depois do outro.
+        Ganha quem deixar menos peças.
+      </p>
+      <div class="controls"><button id="start">Começar</button></div>
+    </div>
+  </section>
+
+  <!-- Passe o aparelho -->
+  <section class="screen" id="screen-handoff">
+    <div class="panel center">
+      <div class="big">🔁</div>
+      <h2 id="handoff-title"></h2>
+      <p id="handoff-text"></p>
+      <button id="handoff-ok">Começar minha vez</button>
+    </div>
+  </section>
+
+  <!-- Jogo -->
+  <section class="screen" id="screen-game">
+    <div class="score">
+      <div><span class="cpeg" id="pegs">32</span><small>Peças</small></div>
+      <div><span id="moves">0</span><small>Jogadas</small></div>
+      <div><span class="cgold" id="best">–</span><small id="best-label">Recorde</small></div>
+    </div>
+    <p class="who" id="who" hidden></p>
+    <p class="status" id="status" aria-live="polite"></p>
+    <div class="board" id="board"></div>
+    <div class="controls">
+      <button id="undo" class="secondary">↩ Desfazer</button>
+      <button id="restart" class="secondary">Recomeçar</button>
+      <button id="done" hidden>Continuar</button>
+    </div>
+    <div class="controls" style="margin-top:10px">
+      <button id="to-setup" class="secondary">Trocar modo</button>
+    </div>
+  </section>
+
+  <!-- Resultado da dupla -->
+  <section class="screen" id="screen-result">
+    <div class="panel center">
+      <div class="big" id="result-icon">🏆</div>
+      <h2 id="result-title"></h2>
+      <p id="result-detail"></p>
+      <div class="controls">
+        <button id="again">Jogar de novo</button>
+        <button id="change" class="secondary">Trocar modo</button>
+      </div>
+    </div>
+  </section>
+</main>
+
+<script>
+  const $ = id => document.getElementById(id);
+  const N = 7, CENTER = 24;
+  const valid = i => { const r = Math.floor(i / N), c = i % N; return (r >= 2 && r <= 4) || (c >= 2 && c <= 4); };
+  const STEPS = [-N, N, -1, 1];
+
+  let duo = false;
+  const names = { 1: 'Jogador 1', 2: 'Jogador 2' };
+  const results = { 1: null, 2: null };
+  let player = 1;
+  let pegs, history, selected, moves, finished;
+
+  /* ---------- Configuração ---------- */
+  $('mode').querySelectorAll('button').forEach(btn => btn.addEventListener('click', () => {
+    $('mode').querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', String(b === btn)));
+    duo = btn.dataset.mode === 'duo';
+    $('duo-fields').hidden = !duo;
+    $('rules-duo').hidden = !duo;
+  }));
+
+  function show(id) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.toggle('active', s.id === id));
+    window.scrollTo(0, 0);
+  }
+
+  $('start').addEventListener('click', () => {
+    if (duo) {
+      names[1] = $('name1').value.trim() || 'Jogador 1';
+      names[2] = $('name2').value.trim() || 'Jogador 2';
+      if (names[1] === names[2]) { names[1] += ' (1)'; names[2] += ' (2)'; }
+      results[1] = results[2] = null;
+      player = 1;
+      handoff(1);
+    } else {
+      newGame();
+      show('screen-game');
+    }
+  });
+  ['name1', 'name2'].forEach(id => $(id).addEventListener('keydown', e => {
+    if (e.key === 'Enter') id === 'name1' ? $('name2').focus() : $('start').click();
+  }));
+
+  function handoff(pn) {
+    player = pn;
+    $('handoff-title').textContent = `Vez de ${names[pn]}`;
+    $('handoff-text').textContent = pn === 1
+      ? `${names[1]} joga primeiro. Depois é a vez de ${names[2]}.`
+      : `${names[1]} terminou com ${results[1]} ${results[1] === 1 ? 'peça' : 'peças'}. Consegue deixar menos?`;
+    show('screen-handoff');
+  }
+  $('handoff-ok').addEventListener('click', () => { newGame(); show('screen-game'); });
+
+  /* ---------- Regras ---------- */
+  function jumpsFrom(p, i) {
+    if (!p[i]) return [];
+    const out = [];
+    const r = Math.floor(i / N), c = i % N;
+    for (const s of STEPS) {
+      const mid = i + s, to = i + 2 * s;
+      // não pode atravessar a borda da linha
+      if (s === -1 && c < 2) continue;
+      if (s === 1 && c > N - 3) continue;
+      if (to < 0 || to >= N * N) continue;
+      if (valid(mid) && valid(to) && p[mid] && !p[to]) out.push({ from: i, mid, to });
+    }
+    return out;
+  }
+  const allJumps = p => p.flatMap((_, i) => jumpsFrom(p, i));
+
+  /* ---------- Tela ---------- */
+  const holes = [];
+  for (let i = 0; i < N * N; i++) {
+    const h = document.createElement('button');
+    h.className = 'hole' + (valid(i) ? '' : ' off');
+    if (!valid(i)) h.tabIndex = -1;
+    h.addEventListener('click', () => clickHole(i));
+    $('board').appendChild(h);
+    holes.push(h);
+  }
+
+  function readBest() {
+    try { const v = Number(localStorage.getItem('resta1-best')); return v > 0 ? v : null; } catch { return null; }
+  }
+  function saveBest(v) {
+    try { localStorage.setItem('resta1-best', String(v)); } catch {}
+  }
+
+  function newGame() {
+    pegs = Array.from({ length: N * N }, (_, i) => valid(i) && i !== CENTER);
+    history = [];
+    selected = null;
+    moves = 0;
+    finished = false;
+    $('done').hidden = true;
+    $('undo').hidden = false;
+    $('restart').hidden = false;
+    if (duo) {
+      $('who').hidden = false;
+      $('who').textContent = `Tabuleiro de ${names[player]}`;
+      $('who').className = 'who t' + player;
+      $('best-label').textContent = player === 2 ? `${names[1]}` : 'Adversário';
+      $('best').textContent = player === 2 ? results[1] : '–';
+    } else {
+      $('who').hidden = true;
+      $('best-label').textContent = 'Recorde';
+      $('best').textContent = readBest() ?? '–';
+    }
+    setStatus('Escolha uma peça pra pular.');
+    render();
+  }
+
+  function setStatus(text, end = false) {
+    $('status').textContent = text;
+    $('status').classList.toggle('end', end);
+  }
+
+  function render(gone = null) {
+    const movable = new Set(finished ? [] : allJumps(pegs).map(j => j.from));
+    const targets = new Set(selected !== null ? jumpsFrom(pegs, selected).map(j => j.to) : []);
+    holes.forEach((h, i) => {
+      if (!valid(i)) return;
+      h.className = 'hole';
+      h.innerHTML = pegs[i] ? '<span class="peg"></span>' : '';
+      h.setAttribute('aria-label', pegs[i] ? 'Peça' : 'Buraco vazio');
+      if (movable.has(i)) h.classList.add('can');
+      if (i === selected) h.classList.add('sel');
+      if (targets.has(i)) h.classList.add('target');
+      if (i === gone) h.classList.add('gone');
+    });
+    $('pegs').textContent = pegs.filter(Boolean).length;
+    $('moves').textContent = moves;
+    $('undo').disabled = !history.length || finished;
+  }
+
+  function clickHole(i) {
+    if (finished || !valid(i)) return;
+    if (pegs[i]) {
+      if (jumpsFrom(pegs, i).length) { selected = selected === i ? null : i; render(); }
+      return;
+    }
+    if (selected !== null) {
+      const j = jumpsFrom(pegs, selected).find(j => j.to === i);
+      if (j) jump(j);
+    }
+  }
+
+  function jump(j) {
+    history.push(pegs.slice());
+    pegs[j.from] = false;
+    pegs[j.mid] = false;
+    pegs[j.to] = true;
+    moves++;
+    // Se dá pra continuar pulando com a mesma peça, ela já fica selecionada
+    selected = jumpsFrom(pegs, j.to).length ? j.to : null;
+    render(j.mid);
+    if (!allJumps(pegs).length) return finish();
+    setStatus(selected !== null ? 'Dá pra continuar pulando com essa peça!' : 'Escolha uma peça pra pular.');
+  }
+
+  function rating(left, center) {
+    if (left === 1) return center ? 'Resta 1 no centro! Gênio! 🧠🏆' : 'Resta 1! Perfeito! 🏆';
+    if (left === 2) return 'Sobraram 2. Quase lá! 👏';
+    if (left <= 4) return `Sobraram ${left}. Muito bom!`;
+    return `Sobraram ${left}. Dá pra melhorar!`;
+  }
+
+  function finish() {
+    finished = true;
+    selected = null;
+    const left = pegs.filter(Boolean).length;
+    const center = left === 1 && pegs[CENTER];
+    render();
+    setStatus(`Sem mais jogadas. ${rating(left, center)}`, true);
+    if (duo) {
+      results[player] = left;
+      $('undo').hidden = true;
+      $('restart').hidden = true;
+      $('done').hidden = false;
+      $('done').textContent = player === 1 ? `Passar pra ${names[2]}` : 'Ver resultado';
+      $('done').focus();
+    } else {
+      const best = readBest();
+      if (!best || left < best) {
+        saveBest(left);
+        $('best').textContent = left;
+        if (best) setStatus(`Novo recorde! ${rating(left, center)}`, true);
+      }
+    }
+  }
+
+  $('done').addEventListener('click', () => {
+    if (player === 1) return handoff(2);
+    const [a, b] = [results[1], results[2]];
+    const plural = n => `${n} ${n === 1 ? 'peça' : 'peças'}`;
+    if (a === b) {
+      $('result-icon').textContent = '🤝';
+      $('result-title').textContent = 'Empate!';
+    } else {
+      $('result-icon').textContent = '🏆';
+      $('result-title').textContent = `${names[a < b ? 1 : 2]} venceu!`;
+    }
+    $('result-detail').textContent = `${names[1]}: ${plural(a)} · ${names[2]}: ${plural(b)}`;
+    show('screen-result');
+  });
+
+  $('undo').addEventListener('click', () => {
+    if (!history.length || finished) return;
+    pegs = history.pop();
+    moves--;
+    selected = null;
+    setStatus('Jogada desfeita.');
+    render();
+  });
+  $('restart').addEventListener('click', newGame);
+  $('again').addEventListener('click', () => { results[1] = results[2] = null; handoff(1); });
+  $('change').addEventListener('click', () => show('screen-setup'));
+  $('to-setup').addEventListener('click', () => show('screen-setup'));
+</script>
+</body>
+</html>

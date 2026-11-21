@@ -1,0 +1,630 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Damas</title>
+<style>
+  :root {
+    --bg: #f4f1ea;
+    --card: #ffffff;
+    --text: #1f1d1a;
+    --muted: #6b665e;
+    --p1: #2f6fdb;
+    --p2: #d9433b;
+    --gold: #c99a06;
+    --ok: #2e9a5b;
+    --sq-light: #ecdcc0;
+    --sq-dark: #9a6b45;
+    --pw: #fbf7ef;
+    --pw-edge: #c9bca6;
+    --pb: #2a2622;
+    --pb-edge: #000000;
+    --border: #e2ddd2;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #16151a;
+      --card: #211f26;
+      --text: #f1efe9;
+      --muted: #a39f97;
+      --p1: #6b9cff;
+      --p2: #ff7a70;
+      --gold: #f2c94c;
+      --ok: #5fd08e;
+      --sq-light: #b89c79;
+      --sq-dark: #6e4a2f;
+      --pw: #f6f0e4;
+      --pw-edge: #b9ab92;
+      --pb: #1b1816;
+      --pb-edge: #000000;
+      --border: #34313b;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #16151a;
+    --card: #211f26;
+    --text: #f1efe9;
+    --muted: #a39f97;
+    --p1: #6b9cff;
+    --p2: #ff7a70;
+    --gold: #f2c94c;
+    --ok: #5fd08e;
+    --sq-light: #b89c79;
+    --sq-dark: #6e4a2f;
+    --pw: #f6f0e4;
+    --pw-edge: #b9ab92;
+    --pb: #1b1816;
+    --pb-edge: #000000;
+    --border: #34313b;
+    color-scheme: dark;
+  }
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    display: flex;
+    justify-content: center;
+    padding: 24px 16px;
+  }
+  main { width: 100%; max-width: 560px; }
+  .back-link { display: inline-block; color: var(--muted); text-decoration: none; font-weight: 600; margin-bottom: 8px; }
+  .back-link:hover { color: var(--text); }
+  h1 { text-align: center; margin: 0 0 20px; font-size: 2rem; }
+
+  .screen { display: none; }
+  .screen.active { display: block; }
+
+  .panel {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 24px 16px;
+  }
+
+  button {
+    font: inherit;
+    font-weight: 700;
+    border: none;
+    border-radius: 999px;
+    padding: 12px 22px;
+    cursor: pointer;
+    background: var(--text);
+    color: var(--bg);
+  }
+  button.secondary {
+    background: transparent;
+    color: var(--text);
+    border: 1px solid var(--border);
+  }
+  button:focus-visible { outline: 3px solid var(--p1); outline-offset: 2px; }
+  .controls { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; }
+
+  /* Configuração */
+  .group-label { font-weight: 700; margin: 0 0 8px; }
+  .seg {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+    gap: 8px;
+    margin-bottom: 18px;
+  }
+  .seg button {
+    border-radius: 12px;
+    background: transparent;
+    color: var(--text);
+    border: 2px solid var(--border);
+    padding: 10px;
+  }
+  .seg button small { display: block; font-weight: 500; color: var(--muted); font-size: 0.8rem; }
+  .seg button[aria-pressed="true"] { border-color: var(--text); background: color-mix(in srgb, var(--text) 8%, transparent); }
+  .field { margin-bottom: 16px; }
+  .field label { display: block; font-weight: 700; margin-bottom: 6px; }
+  .field.f1 label { color: var(--p1); }
+  .field.f2 label { color: var(--p2); }
+  .field input {
+    width: 100%;
+    font: inherit;
+    font-size: 1.1rem;
+    padding: 12px 14px;
+    border-radius: 12px;
+    border: 2px solid var(--border);
+    background: var(--bg);
+    color: var(--text);
+  }
+  .field input:disabled { opacity: 0.6; }
+  .field.f1 input:focus { outline: none; border-color: var(--p1); }
+  .field.f2 input:focus { outline: none; border-color: var(--p2); }
+  .rules { color: var(--muted); font-size: 0.95rem; line-height: 1.5; margin: 0 0 18px; }
+
+  /* Placar */
+  .score {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-bottom: 12px;
+  }
+  .score div {
+    flex: 1;
+    max-width: 200px;
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: var(--card);
+    border: 2px solid var(--border);
+    border-radius: 12px;
+    padding: 8px 12px;
+    transition: border-color 0.2s;
+  }
+  .score .turn-1 { border-color: var(--p1); }
+  .score .turn-2 { border-color: var(--p2); }
+  .score .disc { width: 22px; height: 22px; border-radius: 50%; flex: none; }
+  .score .disc.w { background: var(--pw); border: 2px solid var(--pw-edge); }
+  .score .disc.b { background: var(--pb); border: 2px solid var(--pb-edge); }
+  .score .info { min-width: 0; }
+  .score small { display: block; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .score strong { font-size: 1.2rem; font-variant-numeric: tabular-nums; }
+
+  .status {
+    text-align: center;
+    font-size: 1.1rem;
+    font-weight: 700;
+    min-height: 1.6em;
+    margin: 0 0 12px;
+    overflow-wrap: anywhere;
+  }
+  .status.end { font-size: 1.35rem; color: var(--gold); }
+
+  /* Tabuleiro */
+  .board {
+    display: grid;
+    grid-template-columns: repeat(8, 1fr);
+    grid-template-rows: repeat(8, 1fr);
+    width: min(100%, 480px);
+    aspect-ratio: 1;
+    margin: 0 auto 16px;
+    border: 6px solid var(--sq-dark);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  .sq {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    border: none;
+    border-radius: 0;
+    background: var(--sq-light);
+    min-width: 0;
+    cursor: default;
+  }
+  .sq.dark { background: var(--sq-dark); }
+  .sq.last { box-shadow: inset 0 0 0 100px color-mix(in srgb, var(--gold) 28%, transparent); }
+  .sq.can { cursor: pointer; }
+  .sq.target { cursor: pointer; }
+  .sq.target::after {
+    content: "";
+    width: 30%;
+    height: 30%;
+    border-radius: 50%;
+    background: color-mix(in srgb, var(--ok) 85%, transparent);
+  }
+  .piece {
+    width: 78%;
+    height: 78%;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: clamp(0.8rem, 4.5vw, 1.4rem);
+    line-height: 1;
+    transition: transform 0.15s;
+  }
+  .piece.w { background: var(--pw); border: 3px solid var(--pw-edge); color: var(--gold); box-shadow: inset 0 -3px 0 color-mix(in srgb, var(--pw-edge) 70%, transparent); }
+  .piece.b { background: var(--pb); border: 3px solid var(--pb-edge); color: var(--gold); box-shadow: inset 0 -3px 0 color-mix(in srgb, #ffffff 12%, transparent); }
+  .piece.k::after { content: "♛"; }
+  .sq.can .piece { box-shadow: 0 0 0 3px var(--ok); }
+  .sq.sel .piece { transform: scale(1.1); box-shadow: 0 0 0 4px var(--gold); }
+  .piece.dying { opacity: 0.45; }
+  @media (prefers-reduced-motion: reduce) { .piece { transition: none; } }
+</style>
+</head>
+<body>
+<main>
+  <a class="back-link" href="../index.html">← Jogos</a>
+  <h1>Damas ⚫⚪</h1>
+
+  <!-- Configuração -->
+  <section class="screen active" id="screen-setup">
+    <div class="panel">
+      <p class="group-label">Modo</p>
+      <div class="seg" id="mode">
+        <button data-mode="solo" aria-pressed="true">👤 Sozinho<small>contra o computador</small></button>
+        <button data-mode="duo" aria-pressed="false">👥 Em dupla<small>no mesmo aparelho</small></button>
+      </div>
+
+      <div id="level-group">
+        <p class="group-label">Nível do computador</p>
+        <div class="seg" id="level">
+          <button data-depth="1" aria-pressed="false">Fácil</button>
+          <button data-depth="3" aria-pressed="true">Médio</button>
+          <button data-depth="6" aria-pressed="false">Difícil</button>
+        </div>
+      </div>
+
+      <div class="field f1">
+        <label for="name1">Brancas ⚪ (começa)</label>
+        <input id="name1" maxlength="20" placeholder="Jogador 1" autocomplete="off">
+      </div>
+      <div class="field f2">
+        <label for="name2">Pretas ⚫</label>
+        <input id="name2" maxlength="20" placeholder="Jogador 2" autocomplete="off" value="Computador 🤖" disabled>
+      </div>
+      <p class="rules">
+        Regras brasileiras: captura é obrigatória e a peça comum também captura pra trás.
+        Se der pra capturar de mais de um jeito, vale o que pega mais peças.
+        Chegou do outro lado, vira dama ♛ e anda várias casas.
+      </p>
+      <div class="controls"><button id="start">Começar</button></div>
+    </div>
+  </section>
+
+  <!-- Jogo -->
+  <section class="screen" id="screen-game">
+    <div class="score">
+      <div id="box1"><span class="disc w"></span><span class="info"><small id="n1"></small><strong id="c1">12</strong> peças</span></div>
+      <div id="box2"><span class="disc b"></span><span class="info"><small id="n2"></small><strong id="c2">12</strong> peças</span></div>
+    </div>
+    <p class="status" id="status" aria-live="polite"></p>
+    <div class="board" id="board"></div>
+    <div class="controls">
+      <button id="again" hidden>Jogar de novo</button>
+      <button id="quit" class="secondary">Abandonar</button>
+    </div>
+  </section>
+</main>
+
+<script>
+  const $ = id => document.getElementById(id);
+  const N = 8;
+  const DIRS = [[-1, -1], [-1, 1], [1, -1], [1, 1]];
+  const DRAW_LIMIT = 20; // lances só de damas sem captura
+
+  // Casas: 0 vazia, 1 peça branca, 2 dama branca, -1 peça preta, -2 dama preta
+  const owner = v => Math.sign(v);           // 1 = brancas (jogador 1), -1 = pretas (jogador 2)
+  const isKing = v => Math.abs(v) === 2;
+  const rc = i => [Math.floor(i / N), i % N];
+  const at = (r, c) => r * N + c;
+  const inside = (r, c) => r >= 0 && r < N && c >= 0 && c < N;
+
+  let vsCpu = true, depth = 3;
+  const names = { 1: 'Jogador 1', '-1': 'Jogador 2' };
+  let board, side, legal, selected, lastMove, kingRun, busy, over, cpuTimer;
+
+  /* ---------- Configuração ---------- */
+  function segmented(el, onPick) {
+    el.querySelectorAll('button').forEach(btn => btn.addEventListener('click', () => {
+      el.querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', String(b === btn)));
+      onPick(btn);
+    }));
+  }
+  segmented($('mode'), b => {
+    vsCpu = b.dataset.mode === 'solo';
+    $('level-group').hidden = !vsCpu;
+    $('name2').disabled = vsCpu;
+    $('name2').value = vsCpu ? 'Computador 🤖' : '';
+  });
+  segmented($('level'), b => { depth = Number(b.dataset.depth); });
+
+  function show(id) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.toggle('active', s.id === id));
+    window.scrollTo(0, 0);
+  }
+
+  $('start').addEventListener('click', () => {
+    names[1] = $('name1').value.trim() || (vsCpu ? 'Você' : 'Jogador 1');
+    names[-1] = vsCpu ? 'Computador' : ($('name2').value.trim() || 'Jogador 2');
+    if (names[1] === names[-1]) { names[1] += ' (1)'; names[-1] += ' (2)'; }
+    $('n1').textContent = names[1];
+    $('n2').textContent = names[-1];
+    newGame();
+    show('screen-game');
+  });
+  $('name1').addEventListener('keydown', e => { if (e.key === 'Enter') vsCpu ? $('start').click() : $('name2').focus(); });
+  $('name2').addEventListener('keydown', e => { if (e.key === 'Enter') $('start').click(); });
+
+  /* ---------- Regras ---------- */
+  function initialBoard() {
+    const b = Array(N * N).fill(0);
+    for (let r = 0; r < N; r++) for (let c = 0; c < N; c++) {
+      if ((r + c) % 2 === 1) {
+        if (r < 3) b[at(r, c)] = -1;
+        if (r > 4) b[at(r, c)] = 1;
+      }
+    }
+    return b;
+  }
+
+  // Todas as sequências de captura a partir de uma peça.
+  // As peças capturadas só saem no fim do lance (não dá pra pular a mesma duas vezes).
+  function captureSeqs(b, from, s) {
+    const king = isKing(b[from]);
+    const out = [];
+    const free = (i) => b[i] === 0 || i === from;
+    (function dfs(pos, path, caps) {
+      let more = false;
+      const [r, c] = rc(pos);
+      for (const [dr, dc] of DIRS) {
+        if (!king) {
+          const r2 = r + 2 * dr, c2 = c + 2 * dc;
+          if (!inside(r2, c2)) continue;
+          const mid = at(r + dr, c + dc), to = at(r2, c2);
+          if (owner(b[mid]) === -s && !caps.includes(mid) && free(to)) {
+            more = true;
+            dfs(to, [...path, to], [...caps, mid]);
+          }
+        } else {
+          let rr = r + dr, cc = c + dc;
+          while (inside(rr, cc) && free(at(rr, cc))) { rr += dr; cc += dc; }
+          if (!inside(rr, cc)) continue;
+          const mid = at(rr, cc);
+          if (owner(b[mid]) !== -s || caps.includes(mid)) continue;
+          rr += dr; cc += dc;
+          while (inside(rr, cc) && free(at(rr, cc))) {
+            const to = at(rr, cc);
+            more = true;
+            dfs(to, [...path, to], [...caps, mid]);
+            rr += dr; cc += dc;
+          }
+        }
+      }
+      if (!more && caps.length) out.push({ from, path, caps });
+    })(from, [], []);
+    return out;
+  }
+
+  function genMoves(b, s) {
+    let caps = [];
+    for (let i = 0; i < N * N; i++) if (owner(b[i]) === s) caps.push(...captureSeqs(b, i, s));
+    if (caps.length) {
+      const max = Math.max(...caps.map(m => m.caps.length)); // lei da maioria
+      return caps.filter(m => m.caps.length === max);
+    }
+    const moves = [];
+    const fwd = s === 1 ? -1 : 1;
+    for (let i = 0; i < N * N; i++) {
+      if (owner(b[i]) !== s) continue;
+      const [r, c] = rc(i);
+      if (!isKing(b[i])) {
+        for (const dc of [-1, 1]) {
+          const rr = r + fwd, cc = c + dc;
+          if (inside(rr, cc) && b[at(rr, cc)] === 0) moves.push({ from: i, path: [at(rr, cc)], caps: [] });
+        }
+      } else {
+        for (const [dr, dc] of DIRS) {
+          let rr = r + dr, cc = c + dc;
+          while (inside(rr, cc) && b[at(rr, cc)] === 0) {
+            moves.push({ from: i, path: [at(rr, cc)], caps: [] });
+            rr += dr; cc += dc;
+          }
+        }
+      }
+    }
+    return moves;
+  }
+
+  function apply(b, m) {
+    const nb = b.slice();
+    const piece = nb[m.from];
+    nb[m.from] = 0;
+    m.caps.forEach(i => nb[i] = 0);
+    const to = m.path[m.path.length - 1];
+    const row = rc(to)[0];
+    const s = owner(piece);
+    nb[to] = (!isKing(piece) && ((s === 1 && row === 0) || (s === -1 && row === N - 1))) ? piece * 2 : piece;
+    return nb;
+  }
+
+  /* ---------- Computador ---------- */
+  function evaluate(b) {
+    let score = 0;
+    for (let i = 0; i < N * N; i++) {
+      const v = b[i];
+      if (!v) continue;
+      const [r, c] = rc(i);
+      let val = isKing(v) ? 320 : 100;
+      if (!isKing(v)) val += (v > 0 ? (7 - r) : r) * 4;         // avançar
+      if (c === 0 || c === 7) val += 6;                           // borda é mais segura
+      if ((v > 0 && r === 7) || (v < 0 && r === 0)) val += 8;     // guardar a última linha
+      score += owner(v) * val;
+    }
+    return score;
+  }
+
+  function negamax(b, d, s, alpha, beta) {
+    const moves = genMoves(b, s);
+    if (!moves.length) return -100000 - d;
+    if (d === 0) return s * evaluate(b);
+    let best = -Infinity;
+    for (const m of moves) {
+      const v = -negamax(apply(b, m), d - 1, -s, -beta, -alpha);
+      if (v > best) best = v;
+      if (v > alpha) alpha = v;
+      if (alpha >= beta) break;
+    }
+    return best;
+  }
+
+  function cpuChoose() {
+    const moves = genMoves(board, side);
+    let best = -Infinity, choices = [];
+    for (const m of moves) {
+      const v = -negamax(apply(board, m), depth - 1, -side, -Infinity, Infinity) + Math.random() * 8;
+      if (v > best + 0.0001) { best = v; choices = [m]; }
+    }
+    return choices[0];
+  }
+
+  /* ---------- Tela ---------- */
+  const squares = [];
+  for (let i = 0; i < N * N; i++) {
+    const [r, c] = rc(i);
+    const sq = document.createElement('button');
+    sq.className = 'sq' + ((r + c) % 2 ? ' dark' : '');
+    if ((r + c) % 2 === 0) sq.tabIndex = -1;
+    sq.addEventListener('click', () => clickSquare(i));
+    $('board').appendChild(sq);
+    squares.push(sq);
+  }
+
+  function newGame() {
+    clearTimeout(cpuTimer);
+    board = initialBoard();
+    side = 1;
+    selected = null;
+    lastMove = null;
+    kingRun = 0;
+    busy = false;
+    over = false;
+    $('again').hidden = true;
+    resetQuit();
+    startTurn();
+  }
+
+  function humanTurn() { return !over && !busy && !(vsCpu && side === -1); }
+
+  function startTurn() {
+    legal = genMoves(board, side);
+    selected = null;
+    if (!legal.length) {
+      const left = board.some(v => owner(v) === side);
+      return finish(-side, left ? `${names[side]} ficou sem lances.` : `${names[side]} ficou sem peças.`);
+    }
+    if (kingRun >= DRAW_LIMIT) return finish(0, `${DRAW_LIMIT} lances só de damas, sem captura.`);
+    render();
+    const who = vsCpu && side === -1 ? 'Computador está pensando...' : (vsCpu ? 'Sua vez' : `Vez de ${names[side]}`);
+    const must = legal[0].caps.length ? ` · captura obrigatória${legal[0].caps.length > 1 ? ` (${legal[0].caps.length} peças)` : ''}!` : '';
+    setStatus(who + must);
+    if (vsCpu && side === -1) {
+      busy = true;
+      render();
+      cpuTimer = setTimeout(() => {
+        const m = cpuChoose();
+        busy = false;
+        play(m);
+      }, 350);
+    }
+  }
+
+  function setStatus(text, end = false) {
+    $('status').textContent = text;
+    $('status').classList.toggle('end', end);
+  }
+
+  function render(ghost = null) {
+    const b = ghost ? ghost.board : board;
+    const movable = new Set(humanTurn() ? legal.map(m => m.from) : []);
+    const targets = new Set(selected !== null ? legal.filter(m => m.from === selected).map(m => m.path[m.path.length - 1]) : []);
+    squares.forEach((sq, i) => {
+      const dark = sq.classList.contains('dark');
+      sq.className = 'sq' + (dark ? ' dark' : '');
+      sq.innerHTML = '';
+      const v = b[i];
+      if (v) {
+        const p = document.createElement('span');
+        p.className = 'piece ' + (v > 0 ? 'w' : 'b') + (isKing(v) ? ' k' : '');
+        if (ghost && ghost.dying.includes(i)) p.classList.add('dying');
+        sq.appendChild(p);
+        sq.setAttribute('aria-label', `${v > 0 ? 'Branca' : 'Preta'}${isKing(v) ? ' (dama)' : ''}`);
+      } else {
+        sq.setAttribute('aria-label', 'Casa vazia');
+      }
+      if (lastMove && (i === lastMove.from || i === lastMove.path[lastMove.path.length - 1])) sq.classList.add('last');
+      if (!ghost && movable.has(i)) sq.classList.add('can');
+      if (!ghost && i === selected) sq.classList.add('sel');
+      if (!ghost && targets.has(i)) sq.classList.add('target');
+    });
+    const count = s => board.filter(v => owner(v) === s).length;
+    $('c1').textContent = count(1);
+    $('c2').textContent = count(-1);
+    $('box1').className = !over && side === 1 ? 'turn-1' : '';
+    $('box2').className = !over && side === -1 ? 'turn-2' : '';
+  }
+
+  function clickSquare(i) {
+    if (!humanTurn()) return;
+    if (legal.some(m => m.from === i)) {
+      selected = selected === i ? null : i;
+      return render();
+    }
+    if (selected !== null) {
+      const m = legal.find(m => m.from === selected && m.path[m.path.length - 1] === i);
+      if (m) play(m);
+    }
+  }
+
+  // Mostra o lance casa por casa e depois aplica
+  function play(m) {
+    busy = true;
+    selected = null;
+    const piece = board[m.from];
+    const steps = m.path.map((to, k) => {
+      const b = board.slice();
+      b[m.from] = 0;
+      b[to] = piece;
+      return { board: b, dying: m.caps.slice(0, k + 1) };
+    });
+    let k = 0;
+    const stepDelay = m.path.length > 1 ? 260 : 0;
+    (function next() {
+      if (k < steps.length - 1) {
+        render(steps[k++]);
+        setTimeout(next, stepDelay);
+        return;
+      }
+      const moverWasKing = isKing(piece);
+      board = apply(board, m);
+      lastMove = m;
+      kingRun = (moverWasKing && !m.caps.length) ? kingRun + 1 : 0;
+      side = -side;
+      busy = false;
+      startTurn();
+    })();
+  }
+
+  function finish(winner, why) {
+    over = true;
+    legal = [];
+    render();
+    if (winner === 0) setStatus(`Empate! ${why}`, true);
+    else if (vsCpu) setStatus(winner === 1 ? `Você venceu! 🏆 ${why}` : `O computador venceu! ${why}`, true);
+    else setStatus(`${names[winner]} venceu! 🏆 ${why}`, true);
+    $('again').hidden = false;
+    $('quit').textContent = 'Trocar modo';
+    $('again').focus();
+  }
+
+  $('again').addEventListener('click', newGame);
+
+  // Abandonar com confirmação dentro da página
+  let quitArmed = false, quitTimer;
+  function resetQuit() {
+    quitArmed = false;
+    clearTimeout(quitTimer);
+    $('quit').textContent = over ? 'Trocar modo' : 'Abandonar';
+  }
+  $('quit').addEventListener('click', () => {
+    if (over || quitArmed) { clearTimeout(cpuTimer); over = true; resetQuit(); show('screen-setup'); return; }
+    quitArmed = true;
+    $('quit').textContent = 'Toque de novo pra abandonar';
+    quitTimer = setTimeout(resetQuit, 3000);
+  });
+</script>
+</body>
+</html>
