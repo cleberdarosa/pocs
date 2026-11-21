@@ -1,0 +1,399 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Jogo da Velha</title>
+<style>
+  :root {
+    --bg: #f4f1ea;
+    --card: #ffffff;
+    --text: #1f1d1a;
+    --muted: #6b665e;
+    --p1: #2f6fdb;
+    --p2: #d9433b;
+    --draw: #8a7f6c;
+    --gold: #c99a06;
+    --border: #e2ddd2;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #16151a;
+      --card: #211f26;
+      --text: #f1efe9;
+      --muted: #a39f97;
+      --p1: #6b9cff;
+      --p2: #ff7a70;
+      --draw: #b8ad98;
+      --gold: #f2c94c;
+      --border: #34313b;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #16151a;
+    --card: #211f26;
+    --text: #f1efe9;
+    --muted: #a39f97;
+    --p1: #6b9cff;
+    --p2: #ff7a70;
+    --draw: #b8ad98;
+    --gold: #f2c94c;
+    --border: #34313b;
+    color-scheme: dark;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    display: flex;
+    justify-content: center;
+    padding: 24px 16px;
+  }
+  main { width: 100%; max-width: 520px; }
+  .back { display: inline-block; color: var(--muted); text-decoration: none; font-weight: 600; margin-bottom: 8px; }
+  .back:hover { color: var(--text); }
+  h1 { text-align: center; margin: 0 0 20px; font-size: 2rem; }
+
+  .screen { display: none; }
+  .screen.active { display: block; }
+
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 24px 16px;
+  }
+
+  button {
+    font: inherit;
+    font-weight: 700;
+    border: none;
+    border-radius: 999px;
+    padding: 12px 22px;
+    cursor: pointer;
+    background: var(--text);
+    color: var(--bg);
+  }
+  button.secondary {
+    background: transparent;
+    color: var(--text);
+    border: 1px solid var(--border);
+  }
+  button:focus-visible { outline: 3px solid var(--p1); outline-offset: 2px; }
+
+  /* Tela de nomes */
+  .mode {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-bottom: 18px;
+  }
+  .mode button {
+    border-radius: 12px;
+    background: transparent;
+    color: var(--text);
+    border: 2px solid var(--border);
+    padding: 10px;
+  }
+  .mode button[aria-pressed="true"] { border-color: var(--text); background: color-mix(in srgb, var(--text) 8%, transparent); }
+  .field { margin-bottom: 16px; }
+  .field label { display: block; font-weight: 700; margin-bottom: 6px; }
+  .field.f1 label { color: var(--p1); }
+  .field.f2 label { color: var(--p2); }
+  .field input {
+    width: 100%;
+    font: inherit;
+    font-size: 1.1rem;
+    padding: 12px 14px;
+    border-radius: 12px;
+    border: 2px solid var(--border);
+    background: var(--bg);
+    color: var(--text);
+  }
+  .field input:disabled { opacity: 0.6; }
+  .field.f1 input:focus { outline: none; border-color: var(--p1); }
+  .field.f2 input:focus { outline: none; border-color: var(--p2); }
+  .start-row { text-align: center; margin-top: 4px; }
+
+  /* Placar */
+  .score {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+  .score div {
+    flex: 1;
+    max-width: 150px;
+    min-width: 0;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 8px 10px;
+    text-align: center;
+  }
+  .score span { display: block; font-size: 1.6rem; font-weight: 800; font-variant-numeric: tabular-nums; }
+  .score small { color: var(--muted); display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .s1 { color: var(--p1); }
+  .s2 { color: var(--p2); }
+  .sd { color: var(--draw); }
+
+  .status {
+    text-align: center;
+    font-size: 1.2rem;
+    font-weight: 700;
+    min-height: 1.6em;
+    margin: 0 0 14px;
+    overflow-wrap: anywhere;
+  }
+  .status .x { color: var(--p1); }
+  .status .o { color: var(--p2); }
+
+  /* Tabuleiro */
+  .board {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-rows: repeat(3, 1fr);
+    gap: 8px;
+    width: min(100%, 360px);
+    margin: 0 auto 20px;
+    aspect-ratio: 1;
+  }
+  .cell {
+    border-radius: 14px;
+    background: var(--card);
+    border: 2px solid var(--border);
+    color: var(--text);
+    font-size: clamp(2.4rem, 14vw, 4rem);
+    font-weight: 800;
+    line-height: 1;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.15s, border-color 0.15s;
+  }
+  .cell:not(:disabled):hover { border-color: var(--muted); }
+  .cell:disabled { cursor: default; }
+  .cell.x { color: var(--p1); }
+  .cell.o { color: var(--p2); }
+  .cell span { animation: pop 0.18s ease-out; }
+  .cell.win { border-color: var(--gold); background: color-mix(in srgb, var(--gold) 18%, var(--card)); }
+  @keyframes pop { from { transform: scale(0.4); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+  @media (prefers-reduced-motion: reduce) { .cell span { animation: none; } }
+
+  .controls { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; }
+</style>
+</head>
+<body>
+<main>
+  <a class="back" href="../index.html">← Jogos</a>
+  <h1>Jogo da Velha ❌⭕</h1>
+
+  <!-- Tela de nomes -->
+  <section class="screen active" id="screen-setup">
+    <div class="card">
+      <div class="mode" role="group" aria-label="Modo de jogo">
+        <button id="mode-2p" aria-pressed="true">👥 2 jogadores</button>
+        <button id="mode-cpu" aria-pressed="false">🤖 Contra o computador</button>
+      </div>
+      <div class="field f1">
+        <label for="name1">Jogador ❌</label>
+        <input id="name1" maxlength="20" placeholder="Jogador 1" autocomplete="off">
+      </div>
+      <div class="field f2">
+        <label for="name2">Jogador ⭕</label>
+        <input id="name2" maxlength="20" placeholder="Jogador 2" autocomplete="off">
+      </div>
+      <div class="start-row"><button id="start">Começar</button></div>
+    </div>
+  </section>
+
+  <!-- Tela do jogo -->
+  <section class="screen" id="screen-game">
+    <div class="score">
+      <div><span class="s1" id="s1">0</span><small id="n1"></small></div>
+      <div><span class="sd" id="sd">0</span><small>Velha</small></div>
+      <div><span class="s2" id="s2">0</span><small id="n2"></small></div>
+    </div>
+
+    <p class="status" id="status" aria-live="polite"></p>
+
+    <div class="board" id="board"></div>
+
+    <div class="controls">
+      <button id="again" hidden>Nova partida</button>
+      <button id="change" class="secondary">Trocar jogadores</button>
+    </div>
+  </section>
+</main>
+
+<script>
+  const $ = id => document.getElementById(id);
+  const LINES = [
+    [0,1,2],[3,4,5],[6,7,8],
+    [0,3,6],[1,4,7],[2,5,8],
+    [0,4,8],[2,4,6],
+  ];
+  const MARK = { 1: '❌', 2: '⭕' };
+
+  const names = { 1: 'Jogador 1', 2: 'Jogador 2' };
+  const score = { 1: 0, 2: 0, draw: 0 };
+  let vsCpu = false;
+  let board, turn, starter = 1, over = false, cpuTimer = null;
+
+  // Escolha do modo
+  function setMode(cpu) {
+    vsCpu = cpu;
+    $('mode-2p').setAttribute('aria-pressed', String(!cpu));
+    $('mode-cpu').setAttribute('aria-pressed', String(cpu));
+    $('name2').disabled = cpu;
+    $('name2').value = cpu ? 'Computador 🤖' : '';
+  }
+  $('mode-2p').addEventListener('click', () => setMode(false));
+  $('mode-cpu').addEventListener('click', () => setMode(true));
+
+  // Monta as 9 casas
+  for (let i = 0; i < 9; i++) {
+    const cell = document.createElement('button');
+    cell.className = 'cell';
+    cell.dataset.i = i;
+    cell.addEventListener('click', () => humanMove(i));
+    $('board').appendChild(cell);
+  }
+  const cells = [...document.querySelectorAll('.cell')];
+
+  function show(id) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.toggle('active', s.id === id));
+    window.scrollTo(0, 0);
+  }
+
+  $('start').addEventListener('click', () => {
+    names[1] = $('name1').value.trim() || 'Jogador 1';
+    names[2] = vsCpu ? 'Computador' : ($('name2').value.trim() || 'Jogador 2');
+    if (names[1] === names[2]) { names[1] += ' (1)'; names[2] += ' (2)'; }
+    $('n1').textContent = `${MARK[1]} ${names[1]}`;
+    $('n2').textContent = `${MARK[2]} ${names[2]}`;
+    score[1] = score[2] = score.draw = 0;
+    starter = 1;
+    updateScore();
+    newGame();
+    show('screen-game');
+  });
+  ['name1', 'name2'].forEach(id => $(id).addEventListener('keydown', e => {
+    if (e.key !== 'Enter') return;
+    if (id === 'name1' && !vsCpu) $('name2').focus(); else $('start').click();
+  }));
+
+  function newGame() {
+    clearTimeout(cpuTimer);
+    board = Array(9).fill(0);
+    turn = starter;
+    over = false;
+    cells.forEach(c => { c.innerHTML = ''; c.className = 'cell'; c.disabled = false; c.setAttribute('aria-label', 'Casa vazia'); });
+    $('again').hidden = true;
+    updateStatus();
+    maybeCpu();
+  }
+
+  function updateScore() {
+    $('s1').textContent = score[1];
+    $('s2').textContent = score[2];
+    $('sd').textContent = score.draw;
+  }
+
+  function setStatus(player, text) {
+    const status = $('status');
+    status.textContent = '';
+    if (player) {
+      const who = document.createElement('span');
+      who.className = player === 1 ? 'x' : 'o';
+      who.textContent = `${MARK[player]} ${names[player]}`;
+      status.append(who, ' ' + text);
+    } else {
+      status.textContent = text;
+    }
+  }
+
+  function updateStatus() {
+    if (vsCpu && turn === 2) setStatus(2, 'está pensando...');
+    else setStatus(turn, 'é a sua vez');
+  }
+
+  function humanMove(i) {
+    if (over || board[i] || (vsCpu && turn === 2)) return;
+    play(i);
+  }
+
+  function play(i) {
+    board[i] = turn;
+    const c = cells[i];
+    c.classList.add(turn === 1 ? 'x' : 'o');
+    c.innerHTML = `<span>${turn === 1 ? '✕' : '◯'}</span>`;
+    c.disabled = true;
+    c.setAttribute('aria-label', turn === 1 ? 'Xis' : 'Bola');
+
+    const line = winningLine(board);
+    if (line) {
+      line.forEach(k => cells[k].classList.add('win'));
+      score[turn]++;
+      setStatus(turn, 'venceu! 🎉');
+      return endGame();
+    }
+    if (board.every(Boolean)) {
+      score.draw++;
+      setStatus(0, 'Deu velha! Ninguém venceu.');
+      return endGame();
+    }
+    turn = turn === 1 ? 2 : 1;
+    updateStatus();
+    maybeCpu();
+  }
+
+  function endGame() {
+    over = true;
+    cells.forEach(c => c.disabled = true);
+    updateScore();
+    starter = starter === 1 ? 2 : 1; // quem começa alterna a cada partida
+    $('again').hidden = false;
+    $('again').focus();
+  }
+
+  function winningLine(b) {
+    return LINES.find(([a, c, d]) => b[a] && b[a] === b[c] && b[a] === b[d]) || null;
+  }
+
+  // Computador: ganha se puder, bloqueia se precisar, senão centro, cantos e laterais
+  function maybeCpu() {
+    if (!vsCpu || turn !== 2 || over) return;
+    cpuTimer = setTimeout(() => play(cpuChoice()), 550);
+  }
+
+  function cpuChoice() {
+    const free = board.map((v, i) => v ? null : i).filter(i => i !== null);
+    const tryFor = p => free.find(i => {
+      const t = board.slice(); t[i] = p;
+      return winningLine(t);
+    });
+    let move = tryFor(2);
+    // Às vezes esquece de bloquear, pra não ser imbatível
+    if (move === undefined && Math.random() > 0.15) move = tryFor(1);
+    if (move === undefined) {
+      const prefs = [4, 0, 2, 6, 8, 1, 3, 5, 7].filter(i => free.includes(i));
+      move = Math.random() < 0.6 ? prefs[0] : prefs[Math.floor(Math.random() * prefs.length)];
+    }
+    return move;
+  }
+
+  $('again').addEventListener('click', newGame);
+  $('change').addEventListener('click', () => {
+    clearTimeout(cpuTimer);
+    show('screen-setup');
+  });
+</script>
+</body>
+</html>
