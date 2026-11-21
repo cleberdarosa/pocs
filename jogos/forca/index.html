@@ -1,0 +1,613 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Jogo da Forca</title>
+<style>
+  :root {
+    --bg: #f4f1ea;
+    --card: #ffffff;
+    --text: #1f1d1a;
+    --muted: #6b665e;
+    --p1: #2f6fdb;
+    --p2: #d9433b;
+    --ok: #2e9a5b;
+    --bad: #d9433b;
+    --gold: #c99a06;
+    --wood: #8a6a43;
+    --border: #e2ddd2;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #16151a;
+      --card: #211f26;
+      --text: #f1efe9;
+      --muted: #a39f97;
+      --p1: #6b9cff;
+      --p2: #ff7a70;
+      --ok: #5fd08e;
+      --bad: #ff7a70;
+      --gold: #f2c94c;
+      --wood: #c49a68;
+      --border: #34313b;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #16151a;
+    --card: #211f26;
+    --text: #f1efe9;
+    --muted: #a39f97;
+    --p1: #6b9cff;
+    --p2: #ff7a70;
+    --ok: #5fd08e;
+    --bad: #ff7a70;
+    --gold: #f2c94c;
+    --wood: #c49a68;
+    --border: #34313b;
+    color-scheme: dark;
+  }
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    display: flex;
+    justify-content: center;
+    padding: 24px 16px;
+  }
+  main { width: 100%; max-width: 560px; }
+  .back-link { display: inline-block; color: var(--muted); text-decoration: none; font-weight: 600; margin-bottom: 8px; }
+  .back-link:hover { color: var(--text); }
+  h1 { text-align: center; margin: 0 0 20px; font-size: 2rem; }
+
+  .screen { display: none; }
+  .screen.active { display: block; }
+
+  .panel {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 24px 16px;
+  }
+
+  button {
+    font: inherit;
+    font-weight: 700;
+    border: none;
+    border-radius: 999px;
+    padding: 12px 22px;
+    cursor: pointer;
+    background: var(--text);
+    color: var(--bg);
+  }
+  button.secondary {
+    background: transparent;
+    color: var(--text);
+    border: 1px solid var(--border);
+  }
+  button:disabled { opacity: 0.4; cursor: default; }
+  button:focus-visible { outline: 3px solid var(--p1); outline-offset: 2px; }
+  .controls { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; }
+
+  /* Configuração */
+  .group-label { font-weight: 700; margin: 0 0 8px; }
+  .seg {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+    gap: 8px;
+    margin-bottom: 18px;
+  }
+  .seg button {
+    border-radius: 12px;
+    background: transparent;
+    color: var(--text);
+    border: 2px solid var(--border);
+    padding: 10px;
+  }
+  .seg button[aria-pressed="true"] { border-color: var(--text); background: color-mix(in srgb, var(--text) 8%, transparent); }
+  .field { margin-bottom: 16px; }
+  .field label { display: block; font-weight: 700; margin-bottom: 6px; }
+  .field.f1 label { color: var(--p1); }
+  .field.f2 label { color: var(--p2); }
+  .field input {
+    width: 100%;
+    font: inherit;
+    font-size: 1.1rem;
+    padding: 12px 14px;
+    border-radius: 12px;
+    border: 2px solid var(--border);
+    background: var(--bg);
+    color: var(--text);
+  }
+  .field input:focus { outline: none; border-color: var(--text); }
+  .field small { display: block; color: var(--muted); margin-top: 6px; }
+  .error { color: var(--bad); font-weight: 600; min-height: 1.3em; margin: 0 0 12px; text-align: center; }
+
+  .sec-title { text-align: center; margin: 0 0 4px; font-size: 1.3rem; overflow-wrap: anywhere; }
+  .hint-text { text-align: center; color: var(--muted); margin: 0 0 16px; overflow-wrap: anywhere; }
+
+  /* Placar */
+  .score {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-bottom: 14px;
+  }
+  .score div {
+    flex: 1;
+    max-width: 150px;
+    min-width: 0;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 8px 10px;
+    text-align: center;
+  }
+  .score span { display: block; font-size: 1.5rem; font-weight: 800; font-variant-numeric: tabular-nums; }
+  .score small { color: var(--muted); display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .c1 { color: var(--p1); }
+  .c2 { color: var(--p2); }
+  .cok { color: var(--ok); }
+  .cbad { color: var(--bad); }
+  .cgold { color: var(--gold); }
+
+  /* Forca */
+  .stage {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    margin-bottom: 10px;
+  }
+  .gallows { width: min(46vw, 190px); height: auto; }
+  .gallows .wood { stroke: var(--wood); stroke-width: 6; stroke-linecap: round; fill: none; }
+  .gallows .rope { stroke: var(--wood); stroke-width: 3; fill: none; }
+  .gallows .part { stroke: var(--text); stroke-width: 5; stroke-linecap: round; fill: none; opacity: 0; transition: opacity 0.25s; }
+  .gallows .part.on { opacity: 1; }
+  .gallows.lost .part { stroke: var(--bad); }
+  .gallows.won .part { stroke: var(--ok); }
+  .lives { text-align: center; min-width: 90px; }
+  .lives span { display: block; font-size: 2rem; font-weight: 800; font-variant-numeric: tabular-nums; }
+  .lives small { color: var(--muted); }
+
+  .category {
+    text-align: center;
+    color: var(--muted);
+    font-weight: 600;
+    margin: 0 0 10px;
+    overflow-wrap: anywhere;
+  }
+
+  .word {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 6px 14px;
+    margin: 0 0 14px;
+  }
+  .word .w { display: flex; gap: 4px; }
+  .word .l {
+    width: clamp(1.4rem, 7vw, 2rem);
+    height: clamp(2rem, 9vw, 2.6rem);
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    font-size: clamp(1.1rem, 5.5vw, 1.6rem);
+    font-weight: 800;
+    border-bottom: 3px solid var(--text);
+    padding-bottom: 2px;
+  }
+  .word .l.sym { border-bottom-color: transparent; }
+  .word .l.missed { color: var(--bad); }
+
+  .status {
+    text-align: center;
+    font-size: 1.15rem;
+    font-weight: 700;
+    min-height: 1.6em;
+    margin: 0 0 12px;
+    overflow-wrap: anywhere;
+  }
+
+  /* Teclado */
+  .keys {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 6px;
+    max-width: 440px;
+    margin: 0 auto 18px;
+  }
+  .keys button {
+    padding: 10px 0;
+    border-radius: 10px;
+    background: var(--card);
+    color: var(--text);
+    border: 2px solid var(--border);
+    font-size: 1.05rem;
+  }
+  .keys button.right { background: var(--ok); border-color: var(--ok); color: var(--bg); opacity: 1; }
+  .keys button.wrong { background: transparent; border-color: var(--border); color: var(--muted); text-decoration: line-through; }
+
+  /* Passe o aparelho */
+  .center { text-align: center; }
+  .big { font-size: 4rem; line-height: 1; margin-bottom: 10px; }
+  .center h2 { margin: 0 0 6px; font-size: 1.6rem; overflow-wrap: anywhere; }
+  .center p { color: var(--muted); margin: 0 0 18px; overflow-wrap: anywhere; }
+</style>
+</head>
+<body>
+<main>
+  <a class="back-link" href="../index.html">← Jogos</a>
+  <h1>Jogo da Forca 🪢</h1>
+
+  <!-- Configuração -->
+  <section class="screen active" id="screen-setup">
+    <div class="panel">
+      <p class="group-label">Modo</p>
+      <div class="seg" id="mode">
+        <button data-mode="1" aria-pressed="true">👤 Sozinho</button>
+        <button data-mode="2" aria-pressed="false">👥 2 jogadores</button>
+      </div>
+
+      <div id="solo-opts">
+        <p class="group-label">Categoria</p>
+        <div class="seg" id="cats"></div>
+      </div>
+
+      <div id="duo-opts" hidden>
+        <div class="field f1">
+          <label for="name1">Jogador 1</label>
+          <input id="name1" maxlength="20" placeholder="Jogador 1" autocomplete="off">
+        </div>
+        <div class="field f2">
+          <label for="name2">Jogador 2</label>
+          <input id="name2" maxlength="20" placeholder="Jogador 2" autocomplete="off">
+        </div>
+        <p class="hint-text">Um escreve a palavra secreta e o outro tenta adivinhar. Os papéis trocam a cada rodada.</p>
+      </div>
+
+      <div class="controls"><button id="start">Começar</button></div>
+    </div>
+  </section>
+
+  <!-- Escrever a palavra (2 jogadores) -->
+  <section class="screen" id="screen-secret">
+    <div class="panel">
+      <h2 class="sec-title" id="secret-title"></h2>
+      <p class="hint-text" id="secret-sub"></p>
+      <div class="field">
+        <label for="secret">Palavra secreta</label>
+        <input id="secret" type="password" maxlength="24" autocomplete="off" autocapitalize="characters" spellcheck="false">
+        <small>Só letras, espaços ou hífen. Acentos valem.</small>
+      </div>
+      <div class="field">
+        <label for="clue">Dica (opcional)</label>
+        <input id="clue" maxlength="40" placeholder="Ex.: animal, fruta, filme..." autocomplete="off">
+      </div>
+      <p class="error" id="secret-error" aria-live="polite"></p>
+      <div class="controls">
+        <button id="show-secret" class="secondary">👁 Mostrar</button>
+        <button id="secret-ok">OK</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- Passe o aparelho -->
+  <section class="screen" id="screen-handoff">
+    <div class="panel center">
+      <div class="big">🙈</div>
+      <h2 id="handoff-title"></h2>
+      <p id="handoff-text"></p>
+      <button id="handoff-ok">Estou pronto</button>
+    </div>
+  </section>
+
+  <!-- Jogo -->
+  <section class="screen" id="screen-game">
+    <div class="score" id="score-solo">
+      <div><span class="cok" id="wins">0</span><small>Acertos</small></div>
+      <div><span class="cgold" id="streak">0</span><small>Sequência</small></div>
+      <div><span class="cbad" id="losses">0</span><small>Enforcado</small></div>
+    </div>
+    <div class="score" id="score-duo" hidden>
+      <div><span class="c1" id="s1">0</span><small id="n1"></small></div>
+      <div><span id="round">1</span><small>Rodada</small></div>
+      <div><span class="c2" id="s2">0</span><small id="n2"></small></div>
+    </div>
+
+    <div class="stage">
+      <svg class="gallows" id="gallows" viewBox="0 0 160 190" role="img" aria-label="Forca">
+        <line class="wood" x1="15" y1="180" x2="115" y2="180"/>
+        <line class="wood" x1="40" y1="180" x2="40" y2="12"/>
+        <line class="wood" x1="37" y1="12" x2="115" y2="12"/>
+        <line class="wood" x1="40" y1="42" x2="70" y2="12"/>
+        <line class="rope" x1="112" y1="12" x2="112" y2="38"/>
+        <circle class="part" cx="112" cy="54" r="16"/>
+        <line class="part" x1="112" y1="70" x2="112" y2="120"/>
+        <line class="part" x1="112" y1="82" x2="90" y2="104"/>
+        <line class="part" x1="112" y1="82" x2="134" y2="104"/>
+        <line class="part" x1="112" y1="120" x2="94" y2="152"/>
+        <line class="part" x1="112" y1="120" x2="130" y2="152"/>
+      </svg>
+      <div class="lives">
+        <span id="lives">6</span>
+        <small>chances</small>
+      </div>
+    </div>
+
+    <p class="category" id="category"></p>
+    <div class="word" id="word" aria-live="polite"></div>
+    <p class="status" id="status" aria-live="polite"></p>
+
+    <div class="keys" id="keys"></div>
+
+    <div class="controls">
+      <button id="next" hidden>Próxima palavra</button>
+      <button id="change" class="secondary">Trocar modo</button>
+    </div>
+  </section>
+</main>
+
+<script>
+  const $ = id => document.getElementById(id);
+  const MAX_ERRORS = 6;
+  const WORDS = {
+    'Animais': ['ELEFANTE','GIRAFA','JACARÉ','TARTARUGA','PINGUIM','CORUJA','GOLFINHO','CAMALEÃO','TAMANDUÁ','CAPIVARA','BORBOLETA','ESQUILO','LEOPARDO','CANGURU','ORNITORRINCO'],
+    'Frutas': ['ABACAXI','MELANCIA','JABUTICABA','MARACUJÁ','GOIABA','PITANGA','AÇAÍ','CAJU','CARAMBOLA','FRAMBOESA','TANGERINA','MANGA','AMORA','ACEROLA','GRAVIOLA'],
+    'Países': ['BRASIL','ARGENTINA','PORTUGAL','JAPÃO','CANADÁ','AUSTRÁLIA','MARROCOS','NORUEGA','COLÔMBIA','EGITO','ÍNDIA','MÉXICO','ALEMANHA','TAILÂNDIA','ISLÂNDIA'],
+    'Objetos': ['GUARDA-CHUVA','TESOURA','TRAVESSEIRO','LIQUIDIFICADOR','BICICLETA','LANTERNA','ESPELHO','CADEADO','MOCHILA','TELESCÓPIO','APONTADOR','ESCORREDOR','VENTILADOR','RELÓGIO','CHUVEIRO'],
+    'Profissões': ['ASTRONAUTA','BOMBEIRO','CARPINTEIRO','DENTISTA','JARDINEIRO','PROFESSORA','VETERINÁRIO','ARQUITETA','COZINHEIRO','ELETRICISTA','FOTÓGRAFO','PADEIRO','JORNALISTA','PILOTO','ENFERMEIRA'],
+    'Comidas': ['FEIJOADA','BRIGADEIRO','COXINHA','PÃO DE QUEIJO','LASANHA','MOQUECA','TAPIOCA','PASTEL','ESTROGONOFE','PAMONHA','CUSCUZ','PIPOCA','PUDIM','ACARAJÉ','BOLO DE CENOURA'],
+  };
+  const ALL = 'Todas';
+
+  // Letra "base" sem acento: Á -> A, Ç -> C
+  const base = ch => ch.normalize('NFD').replace(/[̀-ͯ]/g, '');
+  const isLetter = ch => /[A-Z]/.test(base(ch));
+
+  let mode = 1, category = ALL;
+  const names = { 1: 'Jogador 1', 2: 'Jogador 2' };
+  const solo = { wins: 0, losses: 0, streak: 0, recent: [] };
+  const duo = { 1: 0, 2: 0, round: 1, chooser: 1 };
+  let word = '', clue = '', guessed = new Set(), errors = 0, over = false;
+
+  /* ---------- Configuração ---------- */
+  function segmented(el, onPick) {
+    el.querySelectorAll('button').forEach(btn => btn.addEventListener('click', () => {
+      el.querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', String(b === btn)));
+      onPick(btn);
+    }));
+  }
+  [ALL, ...Object.keys(WORDS)].forEach(cat => {
+    const b = document.createElement('button');
+    b.textContent = cat;
+    b.dataset.cat = cat;
+    b.setAttribute('aria-pressed', String(cat === ALL));
+    $('cats').appendChild(b);
+  });
+  segmented($('cats'), b => { category = b.dataset.cat; });
+  segmented($('mode'), b => {
+    mode = Number(b.dataset.mode);
+    $('solo-opts').hidden = mode !== 1;
+    $('duo-opts').hidden = mode !== 2;
+  });
+
+  function show(id) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.toggle('active', s.id === id));
+    window.scrollTo(0, 0);
+  }
+
+  $('start').addEventListener('click', () => {
+    $('score-solo').hidden = mode !== 1;
+    $('score-duo').hidden = mode !== 2;
+    if (mode === 1) {
+      Object.assign(solo, { wins: 0, losses: 0, streak: 0, recent: [] });
+      soloRound();
+    } else {
+      names[1] = $('name1').value.trim() || 'Jogador 1';
+      names[2] = $('name2').value.trim() || 'Jogador 2';
+      if (names[1] === names[2]) { names[1] += ' (1)'; names[2] += ' (2)'; }
+      $('n1').textContent = names[1];
+      $('n2').textContent = names[2];
+      Object.assign(duo, { 1: 0, 2: 0, round: 1, chooser: 1 });
+      askSecret();
+    }
+  });
+
+  /* ---------- Sozinho ---------- */
+  function soloRound() {
+    const cats = category === ALL ? Object.keys(WORDS) : [category];
+    let cat, w, tries = 0;
+    do {
+      cat = cats[Math.floor(Math.random() * cats.length)];
+      const list = WORDS[cat];
+      w = list[Math.floor(Math.random() * list.length)];
+    } while (solo.recent.includes(w) && ++tries < 50);
+    solo.recent = [w, ...solo.recent].slice(0, 20);
+    startRound(w, `Categoria: ${cat}`);
+  }
+
+  /* ---------- 2 jogadores ---------- */
+  const guesser = () => duo.chooser === 1 ? 2 : 1;
+
+  function askSecret() {
+    handoff(duo.chooser, 'Você vai escrever a palavra secreta.', () => {
+      $('secret').value = '';
+      $('secret').type = 'password';
+      $('show-secret').textContent = '👁 Mostrar';
+      $('clue').value = '';
+      $('secret-error').textContent = '';
+      $('secret-title').textContent = `${names[duo.chooser]}, escreva a palavra`;
+      $('secret-sub').textContent = `${names[guesser()]} vai tentar adivinhar.`;
+      show('screen-secret');
+      $('secret').focus();
+    });
+  }
+
+  $('show-secret').addEventListener('click', () => {
+    const hidden = $('secret').type === 'password';
+    $('secret').type = hidden ? 'text' : 'password';
+    $('show-secret').textContent = hidden ? '🙈 Esconder' : '👁 Mostrar';
+  });
+
+  $('secret-ok').addEventListener('click', () => {
+    const w = $('secret').value.trim().toUpperCase().replace(/\s+/g, ' ');
+    const letters = [...w].filter(isLetter).length;
+    if (!w || ![...w].every(ch => isLetter(ch) || ch === ' ' || ch === '-')) {
+      $('secret-error').textContent = 'Use só letras, espaços ou hífen.';
+      return;
+    }
+    if (letters < 3) {
+      $('secret-error').textContent = 'A palavra precisa ter pelo menos 3 letras.';
+      return;
+    }
+    word = w;
+    clue = $('clue').value.trim();
+    handoff(guesser(), 'É a sua vez de adivinhar a palavra.', () => {
+      startRound(word, clue ? `Dica: ${clue}` : 'Sem dica');
+    });
+  });
+  ['secret', 'clue'].forEach(id => $(id).addEventListener('keydown', e => {
+    if (e.key === 'Enter') $('secret-ok').click();
+  }));
+
+  let afterHandoff = null;
+  function handoff(pn, text, fn) {
+    $('handoff-title').textContent = `Passe pra ${names[pn]}`;
+    $('handoff-text').textContent = `${text} Não vale espiar 👀`;
+    afterHandoff = fn;
+    show('screen-handoff');
+  }
+  $('handoff-ok').addEventListener('click', () => afterHandoff && afterHandoff());
+
+  /* ---------- Rodada ---------- */
+  // Teclado da tela
+  const keyEls = {};
+  'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('').forEach(k => {
+    const b = document.createElement('button');
+    b.textContent = k;
+    b.setAttribute('aria-label', `Letra ${k}`);
+    b.addEventListener('click', () => guess(k));
+    $('keys').appendChild(b);
+    keyEls[k] = b;
+  });
+  document.addEventListener('keydown', e => {
+    if (!$('screen-game').classList.contains('active') || e.ctrlKey || e.metaKey || e.altKey) return;
+    if (e.key === 'Enter') {
+      // Se o foco já está num botão, o próprio botão trata o Enter
+      if (over && e.target.tagName !== 'BUTTON') $('next').click();
+      return;
+    }
+    const k = base(e.key.toUpperCase());
+    if (k.length === 1 && keyEls[k]) guess(k);
+  });
+
+  function startRound(w, label) {
+    word = w;
+    guessed = new Set();
+    errors = 0;
+    over = false;
+    $('category').textContent = label;
+    $('gallows').classList.remove('won', 'lost');
+    Object.values(keyEls).forEach(b => { b.className = ''; b.disabled = false; });
+    $('next').hidden = true;
+    if (mode === 1) {
+      $('status').textContent = 'Escolha uma letra.';
+    } else {
+      $('status').textContent = `${names[guesser()]}, escolha uma letra.`;
+      $('round').textContent = duo.round;
+    }
+    render();
+    updateScore();
+    show('screen-game');
+  }
+
+  function render(reveal = false) {
+    const el = $('word');
+    el.innerHTML = '';
+    word.split(' ').forEach(part => {
+      const w = document.createElement('span');
+      w.className = 'w';
+      [...part].forEach(ch => {
+        const l = document.createElement('span');
+        l.className = 'l';
+        if (!isLetter(ch)) {
+          l.classList.add('sym');
+          l.textContent = ch;
+        } else if (guessed.has(base(ch))) {
+          l.textContent = ch;
+        } else if (reveal) {
+          l.textContent = ch;
+          l.classList.add('missed');
+        }
+        w.appendChild(l);
+      });
+      el.appendChild(w);
+    });
+    document.querySelectorAll('#gallows .part').forEach((p, i) => p.classList.toggle('on', i < errors));
+    $('lives').textContent = MAX_ERRORS - errors;
+  }
+
+  function guess(k) {
+    if (over || guessed.has(k)) return;
+    guessed.add(k);
+    const hit = [...word].some(ch => base(ch) === k);
+    keyEls[k].classList.add(hit ? 'right' : 'wrong');
+    keyEls[k].disabled = true;
+    if (!hit) errors++;
+
+    const solved = [...word].filter(isLetter).every(ch => guessed.has(base(ch)));
+    if (solved) return end(true);
+    if (errors >= MAX_ERRORS) return end(false);
+    render();
+    $('status').textContent = hit ? 'Boa! Tem essa letra.' : `Não tem ${k}.`;
+  }
+
+  function end(won) {
+    over = true;
+    render(!won);
+    $('gallows').classList.add(won ? 'won' : 'lost');
+    Object.values(keyEls).forEach(b => b.disabled = true);
+
+    if (mode === 1) {
+      if (won) { solo.wins++; solo.streak++; } else { solo.losses++; solo.streak = 0; }
+      $('status').textContent = won ? 'Acertou! 🎉' : `Enforcado! A palavra era ${word}.`;
+      $('next').textContent = 'Próxima palavra';
+    } else {
+      // Quem adivinha ganha ponto se acertar; quem escolheu ganha se o outro for enforcado
+      const g = guesser();
+      const winner = won ? g : duo.chooser;
+      duo[winner]++;
+      $('status').textContent = won
+        ? `${names[g]} acertou! Ponto pra ${names[g]} 🎉`
+        : `${names[g]} foi enforcado! Ponto pra ${names[duo.chooser]}. A palavra era ${word}.`;
+      $('next').textContent = 'Próxima rodada';
+    }
+    updateScore();
+    $('next').hidden = false;
+    $('next').focus();
+  }
+
+  function updateScore() {
+    $('wins').textContent = solo.wins;
+    $('losses').textContent = solo.losses;
+    $('streak').textContent = solo.streak;
+    $('s1').textContent = duo[1];
+    $('s2').textContent = duo[2];
+  }
+
+  $('next').addEventListener('click', () => {
+    if (mode === 1) return soloRound();
+    duo.round++;
+    duo.chooser = guesser();
+    askSecret();
+  });
+  $('change').addEventListener('click', () => show('screen-setup'));
+</script>
+</body>
+</html>
