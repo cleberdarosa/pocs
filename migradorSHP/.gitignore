@@ -1,0 +1,6 @@
+config.psd1
+usermapping.csv
+logs/
+resultados/
+*.pfx
+*.cer
